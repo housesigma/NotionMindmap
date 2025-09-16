@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNotionStore } from '../store/notionStore';
 
 const NotionConnection: React.FC = () => {
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_NOTION_API_KEY || '');
-  const [databaseId, setDatabaseId] = useState(import.meta.env.VITE_NOTION_DATABASE_ID || '');
-  const [showApiKey, setShowApiKey] = useState(false);
+  const apiKey = import.meta.env.VITE_NOTION_API_KEY || '';
+  const databaseId = import.meta.env.VITE_NOTION_DATABASE_ID || '';
 
   const {
     isLoading,
@@ -20,10 +19,9 @@ const NotionConnection: React.FC = () => {
     if (!isConnected && apiKey && databaseId) {
       connectToNotion(apiKey, databaseId);
     }
-  }, []);
+  }, [isConnected, apiKey, databaseId, connectToNotion]);
 
-  const handleConnect = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConnect = async () => {
     if (apiKey && databaseId) {
       await connectToNotion(apiKey, databaseId);
     }
@@ -52,16 +50,6 @@ const NotionConnection: React.FC = () => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold mb-4">Connect to Notion</h2>
 
-      <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-2">Setup Instructions:</h3>
-        <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
-          <li>Go to <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="underline">Notion Integrations</a></li>
-          <li>Create a new integration and copy the token</li>
-          <li>Share your problem database with the integration</li>
-          <li>Copy the database ID from the database URL (the 32-character string)</li>
-        </ol>
-      </div>
-
       {error && (
         <div className="mb-4 p-4 bg-red-50 rounded-lg flex items-center justify-between">
           <p className="text-red-700">{error}</p>
@@ -74,54 +62,24 @@ const NotionConnection: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleConnect} className="space-y-4">
-        <div>
-          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
-            Notion API Key
-          </label>
-          <div className="relative">
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              id="apiKey"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="secret_..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
-            >
-              {showApiKey ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="databaseId" className="block text-sm font-medium text-gray-700 mb-1">
-            Database ID
-          </label>
-          <input
-            type="text"
-            id="databaseId"
-            value={databaseId}
-            onChange={(e) => setDatabaseId(e.target.value)}
-            placeholder="32-character database ID"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+      <div className="space-y-4">
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 mb-2">
+            <strong>API Key:</strong> ntn_521...JKi99D (configured)
+          </p>
+          <p className="text-sm text-gray-600">
+            <strong>Database ID:</strong> 268c2345-ab46-80e0-876d-ddbd9ebb5383
+          </p>
         </div>
 
         <button
-          type="submit"
+          onClick={handleConnect}
           disabled={isLoading || !apiKey || !databaseId}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Connecting...' : 'Connect to Notion'}
         </button>
-      </form>
+      </div>
     </div>
   );
 };

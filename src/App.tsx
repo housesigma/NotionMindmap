@@ -18,8 +18,12 @@ function App() {
       {/* Sidebar */}
       <div
         className={`${
-          showSidebar ? 'w-96' : 'w-0'
+          showSidebar ? 'w-96' : 'w-0 max-w-0'
         } transition-all duration-300 bg-white shadow-lg overflow-hidden`}
+        style={{
+          width: showSidebar ? '24rem' : '0',
+          maxWidth: showSidebar ? '24rem' : '0'
+        }}
       >
         <div className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
