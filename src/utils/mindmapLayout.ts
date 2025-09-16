@@ -62,6 +62,9 @@ export class MindMapLayoutEngine {
   private calculateHierarchicalLayout(tree: ProblemTree) {
     if (!tree.root) return;
 
+    // Auto-collapse nodes at depth >= 5 unless manually expanded
+    // this.autoCollapseDeepNodes(tree); // Disabled - show all nodes expanded by default
+
     const visited = new Set<string>();
     const queue: { node: ProblemNode; depth: number }[] = [
       { node: tree.root, depth: 0 }
@@ -91,20 +94,31 @@ export class MindMapLayoutEngine {
       }
     }
 
-    // Position nodes with better centering
-    const nodeSpacingX = this.config.nodeSpacing?.x || 250;
-    const nodeSpacingY = this.config.nodeSpacing?.y || 100;
+    // Position nodes with clean spacing
+    const nodeSpacingX = this.config.nodeSpacing?.x || 300;
+    const nodeSpacingY = this.config.nodeSpacing?.y || 120;
 
+    // Position nodes with clean spacing - keep it simple!
     depthGroups.forEach((nodes, depth) => {
-      const nodeCount = nodes.length;
-      const spacing = nodeSpacingY * 1.2;
+      // Sort nodes by their parent's Y position to keep children near parents
+      const sortedNodes = [...nodes].sort((a, b) => {
+        if (a.parentId && b.parentId) {
+          const parentAPosY = this.positions.get(a.parentId)?.y || 0;
+          const parentBPosY = this.positions.get(b.parentId)?.y || 0;
+          return parentAPosY - parentBPosY;
+        }
+        return 0;
+      });
+
+      const nodeCount = sortedNodes.length;
+      const spacing = nodeSpacingY * 1.5;
       const totalHeight = nodeCount * spacing;
       const startY = -totalHeight / 2 + spacing / 2;
 
-      nodes.forEach((node, index) => {
+      sortedNodes.forEach((node, index) => {
         const x = this.config.layout === 'horizontal'
-          ? depth * nodeSpacingX * 2
-          : 0; // Center horizontally for vertical layout
+          ? depth * nodeSpacingX * 2.2
+          : 0;
 
         const y = this.config.layout === 'horizontal'
           ? startY + index * spacing
@@ -113,6 +127,36 @@ export class MindMapLayoutEngine {
         this.positions.set(node.id, { x, y });
       });
     });
+  }
+
+  private autoCollapseDeepNodes(tree: ProblemTree) {
+    if (!tree.root) return;
+
+    const MAX_DEPTH = 4; // Show levels 0-4, collapse 5+
+    const visited = new Set<string>();
+    const queue: { node: ProblemNode; depth: number }[] = [
+      { node: tree.root, depth: 0 }
+    ];
+
+    while (queue.length > 0) {
+      const { node, depth } = queue.shift()!;
+
+      if (visited.has(node.id)) continue;
+      visited.add(node.id);
+
+      // Auto-collapse nodes at depth >= 5 (unless already manually expanded)
+      if (depth > MAX_DEPTH && node.children.length > 0) {
+        this.collapsedNodes.add(node.id);
+      }
+
+      // Continue traversing to find all deep nodes
+      node.children.forEach(childId => {
+        const childNode = tree.nodes.get(childId);
+        if (childNode && !visited.has(childId)) {
+          queue.push({ node: childNode, depth: depth + 1 });
+        }
+      });
+    }
   }
 
   private calculateRadialLayout(tree: ProblemTree) {
@@ -185,6 +229,8 @@ export class MindMapLayoutEngine {
           expanded: !isCollapsed,
           depth: this.getNodeDepth(tree, node),
           notionUrl: node.notionUrl,
+          hasChildren: hasChildren,
+          isCollapsed: isCollapsed,
         },
       };
 
@@ -208,11 +254,12 @@ export class MindMapLayoutEngine {
             id: edgeId,
             source: node.id,
             target: childId,
-            type: 'smoothstep',
-            animated: this.config.enableAnimation,
+            type: 'straight',
+            animated: false,
             style: {
               stroke: this.getEdgeColor(node, tree.nodes.get(childId)),
               strokeWidth: 2,
+              strokeDasharray: '5,5',
             },
           });
         }
@@ -256,7 +303,7 @@ export const createMindMapLayout = (
 ) => {
   const defaultConfig: MindMapConfig = {
     layout: 'horizontal',
-    nodeSpacing: { x: 250, y: 100 },
+    nodeSpacing: { x: 300, y: 120 },
     showLabels: true,
     enableAnimation: true,
     ...config,
