@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run server:*)",
+      "mcp__playwright-extension__browser_navigate",
+      "mcp__playwright-extension__browser_click",
+      "Bash(node server.js)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "mcp__playwright-extension__browser_take_screenshot",
+      "Bash(node:*)",
+      "Bash(npm install)",
+      "mcp__playwright-extension__browser_console_messages",
+      "mcp__playwright-extension__browser_wait_for",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
