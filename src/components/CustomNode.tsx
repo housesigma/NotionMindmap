@@ -35,13 +35,13 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
     }
   };
 
-  // Simpler color scheme based on depth
+  // Simpler color scheme based on depth - all white backgrounds
   const getNodeStyle = () => {
     if (isRoot) {
-      return 'bg-blue-500 text-white border-blue-600';
+      return 'bg-white text-blue-700 border-blue-600 font-bold';
     }
     if (data.depth === 1) {
-      return 'bg-blue-50 text-gray-900 border-blue-200';
+      return 'bg-white text-gray-900 border-blue-200';
     }
     return 'bg-white text-gray-800 border-gray-300';
   };
@@ -51,19 +51,45 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
   return (
     <div
       className={`
-        px-3 py-2 rounded-lg border transition-all cursor-pointer
+        rounded-lg border transition-all cursor-pointer
         ${nodeStyle}
         ${selected ? 'ring-2 ring-blue-400 shadow-lg' : 'shadow-md hover:shadow-lg'}
-        ${isRoot ? 'font-bold text-base min-w-[200px]' : 'text-sm min-w-[120px]'}
+        ${isRoot ? 'text-base min-w-[200px]' : 'text-sm min-w-[120px]'}
         max-w-[250px] relative
       `}
+      style={{
+        paddingLeft: '24px',
+        paddingRight: '24px',
+        paddingTop: '16px',
+        paddingBottom: '16px',
+        backgroundColor: 'white',
+        border: '1px solid #d1d5db'
+      }}
     >
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-2 h-2 bg-gray-400 border-gray-600"
-        style={{ background: '#6b7280', border: '1px solid #4b5563' }}
-      />
+      {/* Collapse/Expand Button at Connection Point */}
+      {hasChildren && (
+        <button
+          onClick={handleToggleClick}
+          className="absolute top-1/2 transform -translate-y-1/2 w-7 h-7 rounded-full bg-white border-2 border-gray-600 text-gray-600 text-sm font-bold hover:bg-gray-50 hover:border-gray-700 flex items-center justify-center transition-all shadow-md z-10"
+          title={isCollapsed ? 'Expand' : 'Collapse'}
+          style={{
+            minWidth: '28px',
+            minHeight: '28px',
+            right: '-14px' // Position it right at the edge where the handle is
+          }}
+        >
+          {isCollapsed ? '+' : '−'}
+        </button>
+      )}
+
+      {!isRoot && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-2 h-2 bg-gray-400 border-gray-600"
+          style={{ background: '#6b7280', border: '1px solid #4b5563' }}
+        />
+      )}
 
       <div className="flex items-center gap-2">
         <div className="flex-1">
@@ -81,15 +107,6 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
             </div>
           )}
         </div>
-        {hasChildren && (
-          <button
-            onClick={handleToggleClick}
-            className="w-6 h-6 rounded-full bg-gray-600 text-white text-xs font-bold hover:bg-gray-700 flex items-center justify-center transition-colors"
-            title={isCollapsed ? 'Expand' : 'Collapse'}
-          >
-            {isCollapsed ? '+' : '−'}
-          </button>
-        )}
       </div>
 
 
