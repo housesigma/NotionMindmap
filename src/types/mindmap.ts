@@ -10,6 +10,9 @@ export interface MindMapNode extends Node {
     expanded?: boolean;
     depth?: number;
     notionUrl?: string;
+    hasChildren?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
   };
 }
 
@@ -22,6 +25,7 @@ export interface MindMapEdge {
   style?: {
     stroke?: string;
     strokeWidth?: number;
+    strokeDasharray?: string;
   };
 }
 
