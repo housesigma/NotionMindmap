@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MindMap from './components/MindMap';
 import NotionConnection from './components/NotionConnection';
+import RootSelector from './components/RootSelector';
 import { useNotionStore } from './store/notionStore';
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
           </div>
 
           <NotionConnection />
+
+          <div className="mt-6">
+            <RootSelector />
+          </div>
 
           {isConnected && (
             <div className="mt-6">

@@ -20,8 +20,11 @@ class NotionDirectAPI {
 
     try {
       while (hasMore) {
+        // Use different API endpoint based on environment
+        const apiBaseUrl = import.meta.env.PROD ? '' : 'http://localhost:3001';
+
         const response = await fetch(
-          'http://localhost:3001/api/notion/query',
+          `${apiBaseUrl}/api/notion/query`,
           {
             method: 'POST',
             headers: {
@@ -163,9 +166,9 @@ class NotionDirectAPI {
     });
   }
 
-  buildTree(nodes: Map<string, ProblemNode>): ProblemTree {
+  buildTree(nodes: Map<string, ProblemNode>, customRootId?: string): ProblemTree {
     // The known root node ID
-    const ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
+    const ROOT_NODE_ID = customRootId || '269c2345-ab46-819c-9b6c-e2eda20aba4c';
 
     // Find the root node
     let rootNode = nodes.get(ROOT_NODE_ID);
@@ -299,6 +302,71 @@ class NotionDirectAPI {
       root: rootNode,
       nodes: nodesInHierarchy,
     };
+  }
+
+  getNodesFromFirstThreeLevels(nodes: Map<string, ProblemNode>): ProblemNode[] {
+    const ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
+    let rootNode = nodes.get(ROOT_NODE_ID);
+
+    if (!rootNode) {
+      const alternativeId = ROOT_NODE_ID.replace(/-/g, '');
+      rootNode = nodes.get(alternativeId);
+
+      if (!rootNode) {
+        nodes.forEach((node, id) => {
+          if (id.replace(/-/g, '') === alternativeId) {
+            rootNode = node;
+          }
+        });
+      }
+    }
+
+    if (!rootNode) {
+      console.log('Root node not found for level extraction');
+      return [];
+    }
+
+    const levelNodes: ProblemNode[] = [];
+    const visited = new Set<string>();
+    const queue: { node: ProblemNode; depth: number }[] = [
+      { node: rootNode, depth: 0 }
+    ];
+
+    while (queue.length > 0) {
+      const { node, depth } = queue.shift()!;
+
+      if (visited.has(node.id) || depth > 2) continue;
+      visited.add(node.id);
+
+      levelNodes.push(node);
+
+      node.children.forEach(childId => {
+        const childNode = nodes.get(childId);
+        if (childNode && !visited.has(childId) && depth < 2) {
+          queue.push({ node: childNode, depth: depth + 1 });
+        }
+      });
+    }
+
+    return levelNodes.sort((a, b) => {
+      const depthA = this.getNodeDepthFromRoot(nodes, a, rootNode.id);
+      const depthB = this.getNodeDepthFromRoot(nodes, b, rootNode.id);
+      return depthA - depthB;
+    });
+  }
+
+  private getNodeDepthFromRoot(nodes: Map<string, ProblemNode>, node: ProblemNode, rootId: string): number {
+    let depth = 0;
+    let current = node;
+
+    while (current.id !== rootId && current.parentId) {
+      depth++;
+      const parent = nodes.get(current.parentId);
+      if (!parent) break;
+      current = parent;
+    }
+
+    return depth;
   }
 }
 
