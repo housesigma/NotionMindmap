@@ -37,7 +37,7 @@ const NotionConnection: React.FC = () => {
           </div>
           <button
             onClick={disconnect}
-            className="px-4 py-2 text-sm text-red-600 hover:text-red-800 font-medium"
+            className="px-4 py-2 text-base text-red-600 hover:text-red-800 font-medium"
           >
             Disconnect
           </button>
@@ -48,7 +48,7 @@ const NotionConnection: React.FC = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-4">Connect to Notion</h2>
+      <h2 className="text-2xl font-bold mb-4">Connect to Notion</h2>
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 rounded-lg flex items-center justify-between">
@@ -64,10 +64,10 @@ const NotionConnection: React.FC = () => {
 
       <div className="space-y-4">
         <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-base text-gray-600 mb-2">
             <strong>API Key:</strong> ntn_521...JKi99D (configured)
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-base text-gray-600">
             <strong>Database ID:</strong> 268c2345-ab46-80e0-876d-ddbd9ebb5383
           </p>
         </div>

@@ -54,7 +54,7 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
         rounded-lg border transition-all cursor-pointer
         ${nodeStyle}
         ${selected ? 'ring-2 ring-blue-400 shadow-lg' : 'shadow-md hover:shadow-lg'}
-        ${isRoot ? 'text-base min-w-[200px]' : 'text-sm min-w-[120px]'}
+        ${isRoot ? 'text-lg min-w-[200px]' : 'text-base min-w-[120px]'}
         max-w-[250px] relative
       `}
       style={{
@@ -102,7 +102,7 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
             {data.label}
           </div>
           {!isCollapsed && data.description && (
-            <div className="text-xs opacity-70 mt-0.5 line-clamp-1">
+            <div className="text-sm opacity-70 mt-0.5 line-clamp-1">
               {data.description}
             </div>
           )}

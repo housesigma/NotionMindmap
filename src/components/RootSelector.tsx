@@ -37,23 +37,23 @@ const RootSelector: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Focus View</h3>
-        <div className="text-sm text-gray-500">
-          {availableRootNodes.length} options from first 3 levels
+    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-bold text-blue-800">🎯 Focus View</h3>
+        <div className="text-sm text-blue-600 font-medium">
+          {availableRootNodes.length} roots
         </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="root-selector" className="block text-sm font-medium text-gray-700">
-          Select root node to focus the tree:
+        <label htmlFor="root-selector" className="block text-sm font-medium text-blue-700">
+          Select root node to focus:
         </label>
         <select
           id="root-selector"
           value={currentRootId || ''}
           onChange={handleRootChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border-2 border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
         >
           {availableRootNodes.map(node => (
             <option key={node.id} value={node.id}>
@@ -63,8 +63,8 @@ const RootSelector: React.FC = () => {
         </select>
       </div>
 
-      <div className="mt-3 text-xs text-gray-500">
-        Changing the root will show only that node and its descendants, creating a smaller, focused view of your hierarchy.
+      <div className="mt-2 text-xs text-blue-600">
+        Matrix shows only problems from this branch with impact & effort values.
       </div>
     </div>
   );
