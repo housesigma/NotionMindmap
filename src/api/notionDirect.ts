@@ -20,8 +20,8 @@ class NotionDirectAPI {
 
     try {
       while (hasMore) {
-        // Use different API endpoint based on environment
-        const apiBaseUrl = import.meta.env.PROD ? '' : 'http://localhost:3001';
+        // Use relative URLs to work with Vite proxy in both dev and production
+        const apiBaseUrl = '';
 
         const response = await fetch(
           `${apiBaseUrl}/api/notion/query`,
@@ -80,6 +80,30 @@ class NotionDirectAPI {
       const statusProperty = (page.properties.Status as any)?.status || page.properties.Status?.select;
       const statusName = statusProperty?.name;
 
+      // Extract Impact field (could be select field with text values or number field)
+      const impactSelect = page.properties.Impact?.select?.name;
+      const impactNumber = page.properties.Impact?.number;
+      const impactValue = impactNumber !== undefined ? impactNumber : this.normalizeImpact(impactSelect);
+
+      // Debug: Log impact value assignment
+      if (impactValue && Math.random() < 0.02) {
+        console.log('Processing node with impact:', {
+          title: titleProperty?.title?.[0]?.plain_text || 'Untitled',
+          rawImpactSelect: impactSelect,
+          rawImpactNumber: impactNumber,
+          processedImpact: impactValue,
+          impactType: typeof impactValue
+        });
+      }
+
+      // Extract Effort field (it's a number field)
+      const effortValue = page.properties.Effort?.number;
+
+      // Extract Solution relations (try both "Solution" and "Solution(s)")
+      const solutionRelation = page.properties.Solution?.relation ||
+                              page.properties['Solution(s)']?.relation ||
+                              [];
+
       const node: ProblemNode = {
         id: page.id,
         title,
@@ -93,7 +117,21 @@ class NotionDirectAPI {
         updatedAt: page.last_edited_time,
         notionUrl: page.url,
         clickUpId,
+        impact: impactValue,
+        effort: effortValue,
+        solutionIds: solutionRelation.map((solution: any) => solution.id),
       };
+
+      // Debug: Log node creation for items with impact
+      if (impactValue && Math.random() < 0.02) {
+        console.log('Created node with impact:', {
+          title: node.title,
+          impact: node.impact,
+          effort: node.effort,
+          originalImpact: impactValue,
+          originalEffort: effortValue
+        });
+      }
 
       nodes.set(page.id, node);
     });
@@ -129,6 +167,19 @@ class NotionDirectAPI {
     if (normalized.includes('critical') || normalized.includes('urgent')) return 'critical';
 
     return 'medium'; // default
+  }
+
+  private normalizeImpact(impact?: string): number | undefined {
+    if (!impact) return undefined;
+
+    const normalized = impact.toLowerCase();
+
+    if (normalized.includes('low')) return 2;
+    if (normalized.includes('medium') || normalized.includes('normal')) return 4;
+    if (normalized.includes('high')) return 6;
+    if (normalized.includes('critical') || normalized.includes('urgent')) return 8;
+
+    return 4; // default to medium
   }
 
   private buildRelationships(nodes: Map<string, ProblemNode>) {

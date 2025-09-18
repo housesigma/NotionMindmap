@@ -11,6 +11,9 @@ export interface ProblemNode {
   updatedAt: string;
   notionUrl?: string;
   clickUpId?: string;
+  impact?: number;
+  effort?: number;
+  solutionIds?: string[];
 }
 
 export interface NotionProblemPage {
@@ -64,6 +67,20 @@ export interface NotionProblemPage {
     'ClickUp ID'?: {
       rich_text: Array<{
         plain_text: string;
+      }>;
+    };
+    Impact?: {
+      select?: {
+        name: string;
+      };
+      number?: number;
+    };
+    Effort?: {
+      number?: number;
+    };
+    Solution?: {
+      relation: Array<{
+        id: string;
       }>;
     };
   };

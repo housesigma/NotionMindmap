@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
-import MindMap from './components/MindMap';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
+import MindMapPage from './pages/MindMapPage';
+import MatrixPage from './pages/MatrixPage';
+import Matrix_new from './components/Matrix_new';
 import { useNotionStore } from './store/notionStore';
 
-function App() {
+function AppContent() {
   const { problemTree, isLoading, isConnected, fetchProblems } = useNotionStore();
   const [showSidebar, setShowSidebar] = useState(true);
+  const location = useLocation();
 
   const handleRefresh = async () => {
     if (isConnected) {
       await fetchProblems();
     }
   };
+
+  const isMatrixPage = location.pathname === '/matrix';
+  const isMatrixNewPage = location.pathname === '/matrix-new';
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -29,7 +36,7 @@ function App() {
         <div className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
-              Notion Mind Map
+              Notion Visualization
             </h1>
             <button
               onClick={() => setShowSidebar(!showSidebar)}
@@ -39,14 +46,52 @@ function App() {
             </button>
           </div>
 
-          <NotionConnection />
-
-          <div className="mt-6">
-            <RootSelector />
+          {/* Navigation */}
+          <div className="mb-4">
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+              <Link
+                to="/"
+                className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
+                  !isMatrixPage && !isMatrixNewPage
+                    ? 'bg-white text-gray-900 shadow'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Mind Map
+              </Link>
+              <Link
+                to="/matrix"
+                className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
+                  isMatrixPage
+                    ? 'bg-white text-gray-900 shadow'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Matrix
+              </Link>
+              <Link
+                to="/matrix-new"
+                className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
+                  isMatrixNewPage
+                    ? 'bg-white text-gray-900 shadow'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Matrix New
+              </Link>
+            </div>
           </div>
 
+          <NotionConnection />
+
+          {(!isMatrixPage || isMatrixNewPage) && (
+            <div className="mt-4">
+              <RootSelector />
+            </div>
+          )}
+
           {isConnected && (
-            <div className="mt-6">
+            <div className="mt-4">
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
@@ -56,11 +101,13 @@ function App() {
               </button>
 
               {problemTree && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 mb-2">Statistics</h3>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>Total Problems: {problemTree.nodes.size}</p>
-                    <p>Root Problem: {problemTree.root?.title || 'None'}</p>
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-2 text-sm">Stats</h3>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    <p>Problems: {problemTree.nodes.size}</p>
+                    {(isMatrixPage || isMatrixNewPage) && (
+                      <p>Matrix Items: {Array.from(problemTree.nodes.values()).filter(node => node.impact !== undefined && node.effort !== undefined).length}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -92,24 +139,31 @@ function App() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading mind map...</p>
+              <p className="text-gray-600">Loading data...</p>
             </div>
           </div>
         ) : (
-          <MindMap
-            problemTree={problemTree}
-            onNodeClick={(nodeId) => {
-              console.log('Node clicked:', nodeId);
-            }}
-          />
+          <Routes>
+            <Route path="/" element={<MindMapPage />} />
+            <Route path="/matrix" element={<MatrixPage />} />
+            <Route path="/matrix-new" element={<Matrix_new />} />
+          </Routes>
         )}
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

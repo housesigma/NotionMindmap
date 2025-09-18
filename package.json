@@ -12,10 +12,12 @@
   "dependencies": {
     "@tailwindcss/forms": "^0.5.10",
     "@types/node": "^24.5.0",
+    "@types/react-router-dom": "^5.3.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1",
     "reactflow": "^11.11.4",
     "zustand": "^5.0.8"
   },

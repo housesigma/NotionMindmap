@@ -245,7 +245,13 @@ export class MindMapLayoutEngine {
     const visited = new Set<string>();
 
     tree.nodes.forEach(node => {
+      // Only create edges from visible nodes
+      if (this.hiddenNodes.has(node.id)) return;
+
       node.children.forEach(childId => {
+        // Only create edges to visible nodes
+        if (this.hiddenNodes.has(childId)) return;
+
         const edgeId = `${node.id}-${childId}`;
         if (!visited.has(edgeId)) {
           visited.add(edgeId);
