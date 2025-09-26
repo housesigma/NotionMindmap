@@ -8,6 +8,7 @@ import ReactFlow, {
   addEdge,
   ReactFlowProvider,
   useReactFlow,
+  MarkerType,
 } from 'reactflow';
 import type { Node, Edge, Connection, BackgroundVariant } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -333,7 +334,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
               strokeWidth: 3,
             },
             markerEnd: {
-              type: 'arrowclosed',
+              type: MarkerType.ArrowClosed,
               width: 20,
               height: 20,
               color: '#2563EB',
@@ -367,7 +368,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
               strokeWidth: 3,
             },
             markerEnd: {
-              type: 'arrowclosed',
+              type: MarkerType.ArrowClosed,
               width: 20,
               height: 20,
               color: '#10B981',
@@ -407,7 +408,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
                 strokeDasharray: '8,4',
               },
               markerEnd: {
-                type: 'arrowclosed',
+                type: MarkerType.ArrowClosed,
                 width: 16,
                 height: 16,
                 color: '#8B5CF6',
