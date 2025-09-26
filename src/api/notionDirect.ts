@@ -3,10 +3,22 @@ import type { NotionProblemPage, ProblemNode, ProblemTree } from '../types/notio
 // Direct Notion API implementation using server proxy
 class NotionDirectAPI {
   private apiKey: string | null = null;
-  private databaseId: string = '268c2345-ab46-80e0-876d-ddbd9ebb5383'; // Your actual Problems database ID
+  private databases = {
+    problems: '268c2345-ab46-80e0-876d-ddbd9ebb5383', // Problems database ID
+    objectives: '272c2345ab468057a199e6f406cc6384'     // Objective database ID
+  };
+  private currentDatabase: 'problems' | 'objectives' = 'problems';
 
   initialize(apiKey: string) {
     this.apiKey = apiKey;
+  }
+
+  setCurrentDatabase(database: 'problems' | 'objectives') {
+    this.currentDatabase = database;
+  }
+
+  getCurrentDatabase() {
+    return this.currentDatabase;
   }
 
   async fetchAllProblems(): Promise<NotionProblemPage[]> {
@@ -32,7 +44,7 @@ class NotionDirectAPI {
             },
             body: JSON.stringify({
               apiKey: this.apiKey,
-              databaseId: this.databaseId,
+              databaseId: this.databases[this.currentDatabase],
               startCursor: startCursor
             })
           }
@@ -64,11 +76,27 @@ class NotionDirectAPI {
       const titleProperty = page.properties.Title || page.properties.title || page.properties.Name;
       const title = titleProperty?.title?.[0]?.plain_text || 'Untitled';
 
-      // For Problems database, we look for 'Parent Problem' field specifically
-      const parentRelation = page.properties['Parent Problem']?.relation || [];
+      // Handle different field names based on current database
+      let parentRelation: any[] = [];
+      let childrenRelation: any[] = [];
 
-      // For children, look for 'Child Problem(s)' field
-      const childrenRelation = page.properties['Child Problem(s)']?.relation || [];
+      if (this.currentDatabase === 'problems') {
+        // For Problems database, we look for 'Parent Problem' field specifically
+        parentRelation = page.properties['Parent Problem']?.relation || [];
+        // For children, look for 'Child Problem(s)' field
+        childrenRelation = page.properties['Child Problem(s)']?.relation || [];
+      } else if (this.currentDatabase === 'objectives') {
+        // For Objective database, we look for 'Parent Objective' field
+        parentRelation = page.properties['Parent Objective']?.relation || [];
+        // For children, look for 'Child' field
+        childrenRelation = page.properties['Child']?.relation || [];
+      }
+
+      // Extract Before/After relationships for Objectives database
+      const beforeRelation = this.currentDatabase === 'objectives' ?
+        (page.properties['Before']?.relation || []) : [];
+      const afterRelation = this.currentDatabase === 'objectives' ?
+        (page.properties['After']?.relation || []) : [];
 
 
       // Extract ClickUp ID if available
@@ -109,6 +137,9 @@ class NotionDirectAPI {
                               page.properties['Solution(s)']?.relation ||
                               [];
 
+      // Extract Problems_OpportunityTree relationships
+      const problemsRelation = page.properties.Problems_OpportunityTree?.relation || [];
+
       const node: ProblemNode = {
         id: page.id,
         title,
@@ -125,6 +156,10 @@ class NotionDirectAPI {
         impact: impactValue,
         effort: effortValue,
         solutionIds: solutionRelation.map((solution: any) => solution.id),
+        beforeIds: beforeRelation.map((before: any) => before.id),
+        afterIds: afterRelation.map((after: any) => after.id),
+        problemIds: problemsRelation.map((problem: any) => problem.id),
+        isObjective: this.currentDatabase === 'objectives',
       };
 
 
@@ -234,41 +269,61 @@ class NotionDirectAPI {
   }
 
   buildTree(nodes: Map<string, ProblemNode>, customRootId?: string): ProblemTree {
-    // The known root node ID
-    const ROOT_NODE_ID = customRootId || '269c2345-ab46-819c-9b6c-e2eda20aba4c';
+    // Use database-specific root nodes or custom root
+    let ROOT_NODE_ID: string | undefined = customRootId;
+
+    // Only use hardcoded root for Problems database if no custom root specified
+    if (!ROOT_NODE_ID && this.currentDatabase === 'problems') {
+      ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
+    }
 
     // Find the root node
-    let rootNode = nodes.get(ROOT_NODE_ID);
+    let rootNode: ProblemNode | undefined;
 
-    if (!rootNode) {
-      // Try alternative formats (with/without dashes)
-      const alternativeId = ROOT_NODE_ID.replace(/-/g, '');
-      rootNode = nodes.get(alternativeId);
+    if (ROOT_NODE_ID) {
+      rootNode = nodes.get(ROOT_NODE_ID);
 
       if (!rootNode) {
-        // If still not found, look through all nodes
-        nodes.forEach((node, id) => {
-          if (id.replace(/-/g, '') === alternativeId) {
-            rootNode = node;
-          }
-        });
+        // Try alternative formats (with/without dashes)
+        const alternativeId = ROOT_NODE_ID.replace(/-/g, '');
+        rootNode = nodes.get(alternativeId);
+
+        if (!rootNode) {
+          // If still not found, look through all nodes
+          nodes.forEach((node, id) => {
+            if (id.replace(/-/g, '') === alternativeId) {
+              rootNode = node;
+            }
+          });
+        }
       }
     }
 
     if (!rootNode) {
-      console.log(`Root node ${ROOT_NODE_ID} not found, building hierarchy from parent-child relationships`);
+      const dbName = this.currentDatabase === 'problems' ? 'Problems' : 'Objectives';
+      if (ROOT_NODE_ID) {
+        console.log(`${dbName} root node ${ROOT_NODE_ID} not found, building hierarchy from parent-child relationships`);
+      } else {
+        console.log(`No specific root node for ${dbName} database, building hierarchy from parent-child relationships`);
+      }
 
-      // Fall back to finding nodes with parent relationships
-      const nodesWithRelationships = new Map<string, ProblemNode>();
-      const parentIds = new Set<string>();
+      // For Objectives database, include ALL nodes (not just hierarchical ones)
+      let nodesWithRelationships = new Map<string, ProblemNode>();
+      let parentIds = new Set<string>();
 
-      // Find all nodes that are part of a hierarchy
-      nodes.forEach(node => {
-        if (node.parentId) {
-          parentIds.add(node.parentId);
-          nodesWithRelationships.set(node.id, node);
-        }
-      });
+      if (this.currentDatabase === 'objectives') {
+        // Include ALL nodes from Objectives database
+        nodesWithRelationships = new Map(nodes);
+        console.log(`Including ALL ${nodes.size} nodes from Objectives database for timeline view`);
+      } else {
+        // For Problems database, find only nodes that are part of a hierarchy
+        nodes.forEach(node => {
+          if (node.parentId) {
+            parentIds.add(node.parentId);
+            nodesWithRelationships.set(node.id, node);
+          }
+        });
+      }
 
       // Add parent nodes
       parentIds.forEach(parentId => {

@@ -4,6 +4,7 @@ import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
 import NodeSelectionControls from './components/NodeSelectionControls';
 import MindMapPage from './pages/MindMapPage';
+import RoadmapNewPage from './pages/RoadmapNewPage';
 import Matrix_new from './components/Matrix_new';
 import { useNotionStore } from './store/notionStore';
 
@@ -19,6 +20,7 @@ function AppContent() {
   };
 
   const isMatrixNewPage = location.pathname === '/matrix-new';
+  const isRoadmapNewPage = location.pathname === '/roadmap-new';
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -51,7 +53,7 @@ function AppContent() {
               <Link
                 to="/"
                 className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
-                  !isMatrixNewPage
+                  !isMatrixNewPage && !isRoadmapNewPage
                     ? 'bg-white text-gray-900 shadow'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
@@ -67,6 +69,16 @@ function AppContent() {
                 }`}
               >
                 Impact vs Effort
+              </Link>
+              <Link
+                to="/roadmap-new"
+                className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
+                  isRoadmapNewPage
+                    ? 'bg-white text-gray-900 shadow'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Roadmap
               </Link>
             </div>
           </div>
@@ -142,6 +154,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<MindMapPage />} />
             <Route path="/matrix-new" element={<Matrix_new />} />
+            <Route path="/roadmap-new" element={<RoadmapNewPage />} />
           </Routes>
         )}
       </div>
