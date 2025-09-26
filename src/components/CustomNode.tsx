@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
+import { useNotionStore } from '../store/notionStore';
 
 interface CustomNodeData {
   label: string;
@@ -16,7 +17,8 @@ interface CustomNodeData {
   onToggleCollapse?: () => void;
 }
 
-const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
+const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
+  const { setSelectedNode } = useNotionStore();
   const isRoot = data.depth === 0;
   const hasChildren = data.hasChildren || false;
   const isCollapsed = data.isCollapsed || false;
@@ -35,18 +37,63 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
     }
   };
 
-  // Simpler color scheme based on depth - all white backgrounds
+  const handleNodeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedNode(id);
+  };
+
+  // Status-based color scheme matching Notion's colors
   const getNodeStyle = () => {
-    if (isRoot) {
-      return 'bg-white text-blue-700 border-blue-600 font-bold';
-    }
-    if (data.depth === 1) {
-      return 'bg-white text-gray-900 border-blue-200';
-    }
-    return 'bg-white text-gray-800 border-gray-300';
+    const status = data.status || 'todo';
+
+    // Notion's default status colors - made more prominent
+    const statusStyles = {
+      'todo': {
+        bg: 'bg-gray-100',
+        text: 'text-gray-900',
+        border: 'border-gray-400',
+        accent: 'bg-gray-400'
+      },
+      'in-progress': {
+        bg: 'bg-blue-100',
+        text: 'text-blue-900',
+        border: 'border-blue-400',
+        accent: 'bg-blue-500'
+      },
+      'done': {
+        bg: 'bg-green-100',
+        text: 'text-green-900',
+        border: 'border-green-400',
+        accent: 'bg-green-500'
+      },
+      'blocked': {
+        bg: 'bg-red-100',
+        text: 'text-red-900',
+        border: 'border-red-400',
+        accent: 'bg-red-500'
+      }
+    };
+
+    const style = statusStyles[status];
+    const rootClass = isRoot ? 'font-bold' : '';
+
+    return `${style.bg} ${style.text} ${style.border} ${rootClass}`;
+  };
+
+  // Get status indicator color
+  const getStatusIndicator = () => {
+    const status = data.status || 'todo';
+    const statusColors = {
+      'todo': 'bg-gray-400',
+      'in-progress': 'bg-blue-500',
+      'done': 'bg-green-500',
+      'blocked': 'bg-red-500'
+    };
+    return statusColors[status];
   };
 
   const nodeStyle = getNodeStyle();
+  const statusIndicator = getStatusIndicator();
 
   return (
     <div
@@ -61,10 +108,9 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
         paddingLeft: '24px',
         paddingRight: '24px',
         paddingTop: '16px',
-        paddingBottom: '16px',
-        backgroundColor: 'white',
-        border: '1px solid #d1d5db'
+        paddingBottom: '16px'
       }}
+      onClick={handleNodeClick}
     >
       {/* Collapse/Expand Button at Connection Point */}
       {hasChildren && (
@@ -92,6 +138,7 @@ const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
       )}
 
       <div className="flex items-center gap-2">
+        <div className={`w-3 h-3 rounded-full ${statusIndicator} flex-shrink-0`}></div>
         <div className="flex-1">
           <div
             className="font-medium line-clamp-2 hover:underline cursor-pointer"

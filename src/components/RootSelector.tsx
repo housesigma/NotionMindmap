@@ -6,6 +6,7 @@ const RootSelector: React.FC = () => {
     availableRootNodes,
     currentRootId,
     changeRootNode,
+    resetRootNode,
     isConnected,
     problemTree
   } = useNotionStore();
@@ -49,18 +50,27 @@ const RootSelector: React.FC = () => {
         <label htmlFor="root-selector" className="block text-sm font-medium text-blue-700">
           Select root node to focus:
         </label>
-        <select
-          id="root-selector"
-          value={currentRootId || ''}
-          onChange={handleRootChange}
-          className="w-full px-3 py-2 border-2 border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-        >
-          {availableRootNodes.map(node => (
-            <option key={node.id} value={node.id}>
-              {getNodeDisplayName(node)}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <select
+            id="root-selector"
+            value={currentRootId || ''}
+            onChange={handleRootChange}
+            className="flex-1 px-3 py-2 border-2 border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+          >
+            {availableRootNodes.map(node => (
+              <option key={node.id} value={node.id}>
+                {getNodeDisplayName(node)}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={resetRootNode}
+            className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            title="Reset to highest level"
+          >
+            🔄 Reset
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 text-xs text-blue-600">
