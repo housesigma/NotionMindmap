@@ -70,6 +70,7 @@ class NotionDirectAPI {
       // For children, look for 'Child Problem(s)' field
       const childrenRelation = page.properties['Child Problem(s)']?.relation || [];
 
+
       // Extract ClickUp ID if available
       const clickUpId = (page.properties as any)['ID']?.rich_text?.[0]?.plain_text ||
                        page.properties['ClickUp ID']?.rich_text?.[0]?.plain_text ||
@@ -77,8 +78,12 @@ class NotionDirectAPI {
                        (page.properties as any)['clickup_id']?.rich_text?.[0]?.plain_text;
 
       // Extract status from the Status field
-      const statusProperty = (page.properties.Status as any)?.status || page.properties.Status?.select;
-      const statusName = statusProperty?.name;
+      const statusProperty = page.properties.Status;
+      const statusName = (statusProperty as any)?.status?.name || (statusProperty as any)?.select?.name;
+
+
+
+
 
       // Extract Impact field (could be select field with text values or number field)
       const impactSelect = page.properties.Impact?.select?.name;
@@ -122,6 +127,7 @@ class NotionDirectAPI {
         solutionIds: solutionRelation.map((solution: any) => solution.id),
       };
 
+
       // Debug: Log node creation for items with impact
       if (impactValue && Math.random() < 0.02) {
         console.log('Created node with impact:', {
@@ -139,6 +145,7 @@ class NotionDirectAPI {
     // Build parent-child relationships if not explicitly defined
     this.buildRelationships(nodes);
 
+
     return nodes;
   }
 
@@ -147,11 +154,20 @@ class NotionDirectAPI {
 
     const normalized = status.toLowerCase();
 
+    // Handle numeric prefixed formats like "10 - Closed", "5 - In Progress", etc.
+    const statusText = normalized.replace(/^\d+\s*[-–]\s*/, '').trim();
+
     // Map various status formats to our standard ones
-    if (normalized.includes('open') || normalized.includes('todo')) return 'todo';
-    if (normalized.includes('progress') || normalized.includes('development') || normalized.includes('analysis')) return 'in-progress';
-    if (normalized.includes('done') || normalized.includes('closed') || normalized.includes('released')) return 'done';
-    if (normalized.includes('blocked')) return 'blocked';
+    if (statusText.includes('open') || statusText.includes('todo') || statusText.includes('not started')) return 'todo';
+    if (statusText.includes('progress') || statusText.includes('development') || statusText.includes('analysis') || statusText.includes('working')) return 'in-progress';
+    if (statusText.includes('done') || statusText.includes('closed') || statusText.includes('released') || statusText.includes('complete')) return 'done';
+    if (statusText.includes('blocked') || statusText.includes('paused') || statusText.includes('stopped')) return 'blocked';
+
+    // Also check the original normalized string in case there's no numeric prefix
+    if (normalized.includes('open') || normalized.includes('todo') || normalized.includes('not started')) return 'todo';
+    if (normalized.includes('progress') || normalized.includes('development') || normalized.includes('analysis') || normalized.includes('working')) return 'in-progress';
+    if (normalized.includes('done') || normalized.includes('closed') || normalized.includes('released') || normalized.includes('complete')) return 'done';
+    if (normalized.includes('blocked') || normalized.includes('paused') || normalized.includes('stopped')) return 'blocked';
 
     return 'todo'; // default
   }
@@ -356,54 +372,55 @@ class NotionDirectAPI {
   }
 
   getNodesFromFirstThreeLevels(nodes: Map<string, ProblemNode>): ProblemNode[] {
-    const ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
-    let rootNode = nodes.get(ROOT_NODE_ID);
+    // Find ALL root nodes (nodes with no parent AND have children)
+    const allRootNodes: ProblemNode[] = [];
 
-    if (!rootNode) {
-      const alternativeId = ROOT_NODE_ID.replace(/-/g, '');
-      rootNode = nodes.get(alternativeId);
+    // Find all root nodes (nodes with no parent and have children)
+    const titleTracker = new Map<string, { hasParent: boolean, hasChildren: boolean, nodes: ProblemNode[] }>();
 
-      if (!rootNode) {
-        nodes.forEach((node, id) => {
-          if (id.replace(/-/g, '') === alternativeId) {
-            rootNode = node;
-          }
-        });
+    // First pass: track all nodes by title to identify duplicates
+    nodes.forEach(node => {
+      if (!titleTracker.has(node.title)) {
+        titleTracker.set(node.title, { hasParent: false, hasChildren: false, nodes: [] });
       }
-    }
+      const tracker = titleTracker.get(node.title)!;
+      tracker.nodes.push(node);
+      if (node.parentId !== null) tracker.hasParent = true;
+      if (node.children.length > 0) tracker.hasChildren = true;
+    });
 
-    if (!rootNode) {
-      console.log('Root node not found for level extraction');
-      return [];
-    }
+    // Second pass: only add nodes as root if they qualify AND are not duplicates with relationships
+    nodes.forEach(node => {
+      if (node.parentId === null && node.children.length > 0) {
+        const tracker = titleTracker.get(node.title)!;
 
-    const levelNodes: ProblemNode[] = [];
-    const visited = new Set<string>();
-    const queue: { node: ProblemNode; depth: number }[] = [
-      { node: rootNode, depth: 0 }
-    ];
-
-    while (queue.length > 0) {
-      const { node, depth } = queue.shift()!;
-
-      if (visited.has(node.id) || depth > 2) continue;
-      visited.add(node.id);
-
-      levelNodes.push(node);
-
-      node.children.forEach(childId => {
-        const childNode = nodes.get(childId);
-        if (childNode && !visited.has(childId) && depth < 2) {
-          queue.push({ node: childNode, depth: depth + 1 });
+        // Skip if this title has duplicate nodes where some have parents
+        // This filters out orphaned duplicates that should be in hierarchies
+        if (tracker.nodes.length > 1 && tracker.hasParent && !node.children.length) {
+          console.log(`⚠️  SKIPPING DUPLICATE: "${node.title}" (orphaned duplicate, main node has relationships)`);
+          return;
         }
+
+        allRootNodes.push(node);
+      }
+    });
+
+    // Log duplicate detection results
+    const duplicates = Array.from(titleTracker.entries()).filter(([_, tracker]) => tracker.nodes.length > 1);
+    if (duplicates.length > 0) {
+      console.log(`🔍 DUPLICATE DETECTION: Found ${duplicates.length} titles with multiple entries:`);
+      duplicates.forEach(([title, tracker]) => {
+        console.log(`  "${title}": ${tracker.nodes.length} entries, hasParent: ${tracker.hasParent}, hasChildren: ${tracker.hasChildren}`);
+        tracker.nodes.forEach(node => {
+          console.log(`    - ID: ${node.id}, parentId: ${node.parentId}, children: ${node.children.length}`);
+        });
       });
     }
 
-    return levelNodes.sort((a, b) => {
-      const depthA = this.getNodeDepthFromRoot(nodes, a, rootNode.id);
-      const depthB = this.getNodeDepthFromRoot(nodes, b, rootNode.id);
-      return depthA - depthB;
-    });
+    console.log(`Found ${allRootNodes.length} root nodes:`, allRootNodes.map(n => n.title));
+
+    // Return only the root nodes, sorted by title
+    return allRootNodes.sort((a, b) => a.title.localeCompare(b.title));
   }
 
   private getNodeDepthFromRoot(nodes: Map<string, ProblemNode>, node: ProblemNode, rootId: string): number {

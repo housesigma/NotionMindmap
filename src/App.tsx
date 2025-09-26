@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
+import NodeSelectionControls from './components/NodeSelectionControls';
 import MindMapPage from './pages/MindMapPage';
-import MatrixPage from './pages/MatrixPage';
 import Matrix_new from './components/Matrix_new';
 import { useNotionStore } from './store/notionStore';
 
@@ -18,7 +18,6 @@ function AppContent() {
     }
   };
 
-  const isMatrixPage = location.pathname === '/matrix';
   const isMatrixNewPage = location.pathname === '/matrix-new';
 
   return (
@@ -52,22 +51,12 @@ function AppContent() {
               <Link
                 to="/"
                 className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
-                  !isMatrixPage && !isMatrixNewPage
+                  !isMatrixNewPage
                     ? 'bg-white text-gray-900 shadow'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 Mind Map
-              </Link>
-              <Link
-                to="/matrix"
-                className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium text-center transition-colors ${
-                  isMatrixPage
-                    ? 'bg-white text-gray-900 shadow'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Matrix
               </Link>
               <Link
                 to="/matrix-new"
@@ -77,18 +66,20 @@ function AppContent() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Matrix New
+                Impact vs Effort
               </Link>
             </div>
           </div>
 
           <NotionConnection />
 
-          {(!isMatrixPage || isMatrixNewPage) && (
-            <div className="mt-4">
-              <RootSelector />
-            </div>
-          )}
+          <div className="mt-4">
+            <RootSelector />
+          </div>
+
+          <div className="mt-4">
+            <NodeSelectionControls />
+          </div>
 
           {isConnected && (
             <div className="mt-4">
@@ -105,7 +96,7 @@ function AppContent() {
                   <h3 className="font-medium text-gray-700 mb-2 text-sm">Stats</h3>
                   <div className="space-y-1 text-xs text-gray-600">
                     <p>Problems: {problemTree.nodes.size}</p>
-                    {(isMatrixPage || isMatrixNewPage) && (
+                    {isMatrixNewPage && (
                       <p>Matrix Items: {Array.from(problemTree.nodes.values()).filter(node => node.impact !== undefined && node.effort !== undefined).length}</p>
                     )}
                   </div>
@@ -150,7 +141,6 @@ function AppContent() {
         ) : (
           <Routes>
             <Route path="/" element={<MindMapPage />} />
-            <Route path="/matrix" element={<MatrixPage />} />
             <Route path="/matrix-new" element={<Matrix_new />} />
           </Routes>
         )}

@@ -43,11 +43,14 @@ interface NotionStore {
   allRawNodes: Map<string, ProblemNode>; // All nodes including solutions
   availableRootNodes: ProblemNode[];
   currentRootId: string | null;
+  selectedNodeId: string | null;
 
   connectToNotion: (apiKey: string, databaseId: string) => Promise<void>;
   fetchProblems: () => Promise<void>;
   loadCachedData: () => void;
   changeRootNode: (rootId: string) => void;
+  resetRootNode: () => void;
+  setSelectedNode: (nodeId: string | null) => void;
   disconnect: () => void;
   clearError: () => void;
 }
@@ -62,6 +65,7 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
   allRawNodes: new Map(),
   availableRootNodes: [],
   currentRootId: null,
+  selectedNodeId: null,
 
   connectToNotion: async (apiKey: string, databaseId: string) => {
     set({ isLoading: true, error: null });
@@ -192,6 +196,39 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
     }
   },
 
+  resetRootNode: () => {
+    const state = get();
+    if (!state.allNodes.size) {
+      set({ error: 'No data loaded. Please fetch problems first.' });
+      return;
+    }
+
+    try {
+      // Reset to the original root (no custom root ID)
+      const tree = notionAPI.buildTree(state.allNodes);
+      const originalRootId = tree.root?.id || null;
+
+      set({
+        problemTree: tree,
+        currentRootId: originalRootId,
+        error: null,
+      });
+
+      // Update cache with reset root
+      if (state.rawPages.length > 0) {
+        saveToCache({
+          rawPages: state.rawPages,
+          currentRootId: originalRootId,
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to reset root node',
+      });
+    }
+  },
+
   disconnect: () => {
     set({
       isConnected: false,
@@ -203,6 +240,10 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
       currentRootId: null,
       error: null,
     });
+  },
+
+  setSelectedNode: (nodeId: string | null) => {
+    set({ selectedNodeId: nodeId });
   },
 
   clearError: () => {
