@@ -32,11 +32,19 @@ class NotionDirectAPI {
 
     try {
       while (hasMore) {
-        // Use relative URLs to work with Vite proxy in both dev and production
-        const apiBaseUrl = '';
+        // Auto-detect API base URL to support subpath deployments
+        const getApiUrl = () => {
+          // Get current page path and construct API URL relative to it
+          const currentPath = window.location.pathname;
+          // Remove any trailing route paths (matrix, matrix-new)
+          const basePath = currentPath.replace(/\/(matrix|matrix-new)?$/, '');
+          // Ensure we end with / for proper path joining
+          const normalizedBase = basePath.endsWith('/') ? basePath : basePath + '/';
+          return `${normalizedBase}api/notion/query`;
+        };
 
         const response = await fetch(
-          `${apiBaseUrl}/api/notion/query`,
+          getApiUrl(),
           {
             method: 'POST',
             headers: {

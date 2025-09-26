@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
-import NodeSelectionControls from './components/NodeSelectionControls';
 import MindMapPage from './pages/MindMapPage';
 import RoadmapNewPage from './pages/RoadmapNewPage';
 import Matrix_new from './components/Matrix_new';
@@ -89,9 +88,6 @@ function AppContent() {
             <RootSelector />
           </div>
 
-          <div className="mt-4">
-            <NodeSelectionControls />
-          </div>
 
           {isConnected && (
             <div className="mt-4">
@@ -163,8 +159,39 @@ function AppContent() {
 }
 
 function App() {
+  // Auto-detect basename from current path to support any subpath deployment
+  const getBasename = () => {
+    // Try to detect from script tag src first
+    const scripts = document.querySelectorAll('script[src*="index-"]');
+    if (scripts.length > 0) {
+      const scriptSrc = (scripts[0] as HTMLScriptElement).src;
+      const url = new URL(scriptSrc);
+      const pathSegments = url.pathname.split('/');
+      // Remove filename and assets folder
+      pathSegments.pop(); // remove filename
+      if (pathSegments[pathSegments.length - 1] === 'assets') {
+        pathSegments.pop(); // remove assets folder
+      }
+      const basePath = pathSegments.join('/');
+      return basePath === '' ? '/' : basePath + '/';
+    }
+
+    // Fallback: detect from current location
+    const currentPath = window.location.pathname;
+    // If we're at root or have typical SPA routes, return root
+    if (currentPath === '/' || currentPath.match(/^\/(matrix|matrix-new)?$/)) {
+      return '/';
+    }
+
+    // Try to extract base path by removing known routes
+    const pathWithoutRoute = currentPath.replace(/\/(matrix|matrix-new)?$/, '');
+    return pathWithoutRoute === '' ? '/' : pathWithoutRoute + '/';
+  };
+
+  const basename = getBasename();
+
   return (
-    <Router>
+    <Router basename={basename === '/' ? undefined : basename}>
       <AppContent />
     </Router>
   );
