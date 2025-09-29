@@ -3,27 +3,27 @@ import type { ProblemTree, NotionProblemPage, ProblemNode } from '../types/notio
 import notionAPI from '../api/notion';
 
 // Helper functions for localStorage
-const CACHE_KEY = 'notion-mindmap-data';
+const getCacheKey = (database: 'problems' | 'objectives') => `notion-mindmap-data-${database}`;
 
 const saveToCache = (data: {
   rawPages: NotionProblemPage[];
   currentRootId: string | null;
   timestamp: number;
-}) => {
+}, database: 'problems' | 'objectives') => {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(getCacheKey(database), JSON.stringify(data));
   } catch (error) {
     console.warn('Failed to save data to cache:', error);
   }
 };
 
-const loadFromCache = (): {
+const loadFromCache = (database: 'problems' | 'objectives'): {
   rawPages: NotionProblemPage[];
   currentRootId: string | null;
   timestamp: number;
 } | null => {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(getCacheKey(database));
     if (cached) {
       return JSON.parse(cached);
     }
@@ -44,8 +44,10 @@ interface NotionStore {
   availableRootNodes: ProblemNode[];
   currentRootId: string | null;
   selectedNodeId: string | null;
+  currentDatabase: 'problems' | 'objectives';
 
   connectToNotion: (apiKey: string, databaseId: string) => Promise<void>;
+  switchDatabase: (database: 'problems' | 'objectives') => Promise<void>;
   fetchProblems: () => Promise<void>;
   loadCachedData: () => void;
   changeRootNode: (rootId: string) => void;
@@ -66,6 +68,7 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
   availableRootNodes: [],
   currentRootId: null,
   selectedNodeId: null,
+  currentDatabase: 'problems' as 'problems' | 'objectives',
 
   connectToNotion: async (apiKey: string, databaseId: string) => {
     set({ isLoading: true, error: null });
@@ -80,6 +83,50 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : 'Failed to connect to Notion',
         isConnected: false,
+      });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  switchDatabase: async (database: 'problems' | 'objectives') => {
+    const state = get();
+    if (!state.isConnected) {
+      set({ error: 'Not connected to Notion. Please connect first.' });
+      return;
+    }
+
+    set({ isLoading: true, error: null, currentDatabase: database });
+
+    try {
+      // Switch the API to use the new database
+      notionAPI.setCurrentDatabase(database);
+
+      // Fetch data from the new database
+      const pages = await notionAPI.fetchAllProblems();
+      const nodes = notionAPI.convertToNodes(pages);
+      const tree = notionAPI.buildTree(nodes);
+      const availableRootNodes = notionAPI.getNodesFromFirstThreeLevels(nodes);
+
+      set({
+        rawPages: pages,
+        problemTree: tree,
+        allNodes: nodes,
+        allRawNodes: nodes,
+        availableRootNodes,
+        currentRootId: tree.root?.id || null,
+        error: null,
+      });
+
+      // Save to cache after successful switch
+      saveToCache({
+        rawPages: pages,
+        currentRootId: tree.root?.id || null,
+        timestamp: Date.now(),
+      }, database);
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to switch database',
       });
     } finally {
       set({ isLoading: false });
@@ -118,7 +165,7 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
         rawPages: pages,
         currentRootId: newRootId,
         timestamp: Date.now(),
-      });
+      }, state.currentDatabase);
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch problems',
@@ -129,7 +176,8 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
   },
 
   loadCachedData: () => {
-    const cached = loadFromCache();
+    const state = get();
+    const cached = loadFromCache(state.currentDatabase);
 
     if (!cached) {
       console.log('No cached data found');
@@ -220,7 +268,7 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
           rawPages: state.rawPages,
           currentRootId: originalRootId,
           timestamp: Date.now(),
-        });
+        }, state.currentDatabase);
       }
     } catch (error) {
       set({

@@ -14,6 +14,10 @@ export interface ProblemNode {
   impact?: number;
   effort?: number;
   solutionIds?: string[];
+  beforeIds?: string[];  // For temporal "Before" relationships
+  afterIds?: string[];   // For temporal "After" relationships
+  problemIds?: string[]; // For Problems_OpportunityTree relationships (objectives to problems)
+  isObjective?: boolean; // To distinguish objectives from problems
 }
 
 export interface NotionProblemPage {
@@ -79,6 +83,11 @@ export interface NotionProblemPage {
       number?: number;
     };
     Solution?: {
+      relation: Array<{
+        id: string;
+      }>;
+    };
+    Problems_OpportunityTree?: {
       relation: Array<{
         id: string;
       }>;

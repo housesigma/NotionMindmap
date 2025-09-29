@@ -15,6 +15,7 @@ interface CustomNodeData {
   isCollapsed?: boolean;
   hasChildren?: boolean;
   onToggleCollapse?: () => void;
+  isObjective?: boolean;
 }
 
 const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
@@ -45,8 +46,43 @@ const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
   // Status-based color scheme matching Notion's colors
   const getNodeStyle = () => {
     const status = data.status || 'todo';
+    const isProblemNode = data.isObjective === false;
 
-    // Notion's default status colors - made more prominent
+    // Problem nodes get a distinct orange/amber color scheme
+    if (isProblemNode) {
+      const problemStyles = {
+        'todo': {
+          bg: 'bg-amber-50',
+          text: 'text-amber-900',
+          border: 'border-amber-400',
+          accent: 'bg-amber-400'
+        },
+        'in-progress': {
+          bg: 'bg-orange-100',
+          text: 'text-orange-900',
+          border: 'border-orange-500',
+          accent: 'bg-orange-500'
+        },
+        'done': {
+          bg: 'bg-yellow-100',
+          text: 'text-yellow-900',
+          border: 'border-yellow-500',
+          accent: 'bg-yellow-500'
+        },
+        'blocked': {
+          bg: 'bg-red-200',
+          text: 'text-red-900',
+          border: 'border-red-600',
+          accent: 'bg-red-600'
+        }
+      };
+
+      const style = problemStyles[status];
+      const rootClass = isRoot ? 'font-bold' : '';
+      return `${style.bg} ${style.text} ${style.border} ${rootClass}`;
+    }
+
+    // Objective nodes use the original color scheme
     const statusStyles = {
       'todo': {
         bg: 'bg-gray-100',
@@ -83,6 +119,20 @@ const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
   // Get status indicator color
   const getStatusIndicator = () => {
     const status = data.status || 'todo';
+    const isProblemNode = data.isObjective === false;
+
+    // Problem nodes get orange/amber status indicators
+    if (isProblemNode) {
+      const problemStatusColors = {
+        'todo': 'bg-amber-400',
+        'in-progress': 'bg-orange-500',
+        'done': 'bg-yellow-500',
+        'blocked': 'bg-red-600'
+      };
+      return problemStatusColors[status];
+    }
+
+    // Objective nodes use the original status indicators
     const statusColors = {
       'todo': 'bg-gray-400',
       'in-progress': 'bg-blue-500',
@@ -160,6 +210,24 @@ const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
       <Handle
         type="source"
         position={Position.Right}
+        className="w-2 h-2 bg-gray-400 border-gray-600"
+        style={{ background: '#6b7280', border: '1px solid #4b5563' }}
+      />
+
+      {/* Top handle for receiving parent-child connections */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="w-2 h-2 bg-gray-400 border-gray-600"
+        style={{ background: '#6b7280', border: '1px solid #4b5563' }}
+      />
+
+      {/* Bottom handle for sending parent-child connections */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
         className="w-2 h-2 bg-gray-400 border-gray-600"
         style={{ background: '#6b7280', border: '1px solid #4b5563' }}
       />
