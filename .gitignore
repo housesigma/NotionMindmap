@@ -27,6 +27,3 @@ dist-ssr
 .env
 .env.local
 .env.production
-
-# Claude Code configuration
-.claude

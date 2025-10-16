@@ -385,7 +385,6 @@ const Matrix: React.FC = () => {
                   variant="caption"
                   sx={{
                     fontSize: '0.7rem',
-                    color: 'text.secondary',
                     fontWeight: value === 5 ? 600 : 400,
                     color: value === 5 ? 'primary.main' : 'text.secondary'
                   }}
