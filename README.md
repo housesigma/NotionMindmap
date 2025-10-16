@@ -172,9 +172,9 @@ npm run preview
    - Click "Connect to Notion"
 
 2. **Choose Your View**:
-   - **Mind Map**: Hierarchical tree visualization with parent-child relationships
-   - **Matrix**: Basic impact-effort analysis
-   - **Matrix New**: Enhanced impact-effort matrix with accurate positioning
+   - **Problems** (`/problems` or `/problems/tree`): Hierarchical tree visualization with parent-child relationships
+   - **Matrix** (`/problems/matrix`): Enhanced impact-effort matrix with accurate positioning and unique_id support
+   - **Objectives** (`/objectives`): Timeline roadmap view for objective-based workflows
 
 3. **Focus Your Data**:
    - Use the "Focus View" selector to choose a root node
@@ -196,26 +196,26 @@ npm run preview
 /src
 ├── /api          # Notion API integration
 │   ├── notion.ts         # Main API export
-│   └── notionDirect.ts   # Direct API implementation with Impact/Effort support
+│   └── notionDirect.ts   # Direct API implementation with unique_id support
 ├── /components   # React components
 │   ├── CustomNode.tsx      # Mind map node component
 │   ├── MindMap.tsx        # Main mind map visualization
-│   ├── Matrix_new.tsx     # Enhanced impact-effort matrix
-│   ├── NotionConnection.tsx # Connection UI
+│   ├── RoadmapMindMap.tsx # Timeline visualization for objectives
 │   └── RootSelector.tsx   # Root node filtering component
 ├── /pages        # Page components
-│   ├── MindMapPage.tsx    # Mind map view wrapper
-│   └── MatrixPage.tsx     # Original matrix view
+│   ├── Problems.tsx       # Mind map view (renamed from MindMapPage)
+│   ├── Matrix.tsx         # Enhanced impact-effort matrix (renamed from MatrixPage)
+│   └── Objectives.tsx     # Timeline roadmap view (renamed from RoadmapNewPage)
 ├── /store        # Zustand state management
-│   └── notionStore.ts     # Application state with caching
+│   └── notionStore.ts     # Application state with caching and database switching
 ├── /types        # TypeScript type definitions
-│   ├── notion.ts          # Notion data structures
+│   ├── notion.ts          # Notion data structures with unique_id support
 │   └── mindmap.ts         # Mind map specific types
 ├── /utils        # Layout algorithms and helpers
 │   └── mindmapLayout.ts   # Enhanced layout engine with connection fixes
-├── App.tsx       # Main application with routing
+├── App.tsx       # Main application with hierarchical routing
 └── main.tsx      # Application entry point
-server.js         # Express proxy server
+server.js         # Express proxy server with CORS support
 ```
 
 ## Key Implementation Details
@@ -282,6 +282,52 @@ const ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
    - Frontend runs on port 5173
    - Backend runs on port 3001
    - Change ports in `vite.config.ts` and `server.js` if needed
+
+## Known Issues 🔧
+
+The following issues have been identified and need to be resolved:
+
+### 1. 大量问题无法映射放入Matrix统计 (Large Number of Problems Cannot Be Mapped to Matrix)
+**Issue**: Many problems in the database cannot be displayed in the Impact-Effort matrix visualization.
+
+**Details**:
+- A significant portion of problems lack required Impact or Effort values
+- These unmappable items only appear in the "Unmappable" count but cannot be analyzed strategically
+- Users cannot easily identify which specific problems need Impact/Effort values added
+
+**Impact**:
+- Reduces the effectiveness of strategic decision-making
+- Creates incomplete matrix analysis
+- Users miss critical problems in their prioritization process
+
+**Proposed Solutions**:
+- Add bulk editing interface for missing Impact/Effort values
+- Implement smart defaulting based on problem characteristics
+- Provide recommendations for Impact/Effort scoring
+- Add data completeness dashboard with actionable insights
+
+### 2. 切换路由时数据获取失败问题 (Data Fetching Failure When Switching Routes)
+**Issue**: Navigation between different views (Problems, Matrix, Objectives) sometimes fails to load data properly.
+
+**Details**:
+- Inconsistent data state when switching between route paths
+- Database switching logic may not trigger correctly for Objectives view
+- Race conditions between route changes and data fetching
+- State persistence issues across navigation
+
+**Impact**:
+- Poor user experience with blank or stale views
+- Users need to manually refresh to see updated data
+- Unreliable navigation between visualization modes
+
+**Proposed Solutions**:
+- Implement proper route-based data loading with loading states
+- Add automatic retry mechanisms for failed data fetches
+- Improve state management consistency across routes
+- Add route-specific data validation and error boundaries
+
+### Priority
+Both issues significantly impact user experience and should be addressed in the next development cycle.
 
 ## Matrix Visualization Features
 
