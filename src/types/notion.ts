@@ -10,7 +10,7 @@ export interface ProblemNode {
   createdAt: string;
   updatedAt: string;
   notionUrl?: string;
-  clickUpId?: string;
+  uniqueId?: string | number;
   impact?: number;
   effort?: number;
   solutionIds?: string[];
@@ -70,6 +70,14 @@ export interface NotionProblemPage {
     };
     'ClickUp ID'?: {
       rich_text: Array<{
+        plain_text: string;
+      }>;
+    };
+    ID?: {
+      unique_id?: {
+        number: number;
+      };
+      rich_text?: Array<{
         plain_text: string;
       }>;
     };

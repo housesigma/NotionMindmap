@@ -107,8 +107,9 @@ class NotionDirectAPI {
         (page.properties['After']?.relation || []) : [];
 
 
-      // Extract ClickUp ID if available
-      const clickUpId = (page.properties as any)['ID']?.rich_text?.[0]?.plain_text ||
+      // Extract unique ID from ID field if available
+      const uniqueId = (page.properties as any)['ID']?.unique_id?.number ||
+                       (page.properties as any)['ID']?.rich_text?.[0]?.plain_text ||
                        page.properties['ClickUp ID']?.rich_text?.[0]?.plain_text ||
                        (page.properties as any)['ClickUp_ID']?.rich_text?.[0]?.plain_text ||
                        (page.properties as any)['clickup_id']?.rich_text?.[0]?.plain_text;
@@ -160,7 +161,7 @@ class NotionDirectAPI {
         createdAt: page.created_time,
         updatedAt: page.last_edited_time,
         notionUrl: page.url,
-        clickUpId,
+        uniqueId,
         impact: impactValue,
         effort: effortValue,
         solutionIds: solutionRelation.map((solution: any) => solution.id),

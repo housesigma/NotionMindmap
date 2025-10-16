@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import RoadmapMindMap from '../components/RoadmapMindMap';
 import { useNotionStore } from '../store/notionStore';
 
-const RoadmapNewPage: React.FC = () => {
+const Objectives: React.FC = () => {
   const { switchDatabase, currentDatabase, isConnected, allNodes } = useNotionStore();
 
   useEffect(() => {
@@ -20,4 +20,4 @@ const RoadmapNewPage: React.FC = () => {
   );
 };
 
-export default RoadmapNewPage;
+export default Objectives;

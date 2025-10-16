@@ -2,7 +2,7 @@ import React from 'react';
 import MindMap from '../components/MindMap';
 import { useNotionStore } from '../store/notionStore';
 
-const MindMapPage: React.FC = () => {
+const Problems: React.FC = () => {
   const { problemTree } = useNotionStore();
 
   return (
@@ -15,4 +15,4 @@ const MindMapPage: React.FC = () => {
   );
 };
 
-export default MindMapPage;
+export default Problems;
