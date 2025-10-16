@@ -31,7 +31,7 @@ import {
   Timeline
 } from '@mui/icons-material';
 import Problems from './pages/Problems';
-import Objectives from './pages/Objectives';
+import Roadmap from './pages/Roadmap';
 import Matrix from './pages/Matrix';
 import { useNotionStore } from './store/notionStore';
 
@@ -45,7 +45,9 @@ function AppContent() {
     availableRootNodes,
     currentRootId,
     changeRootNode,
-    resetRootNode
+    resetRootNode,
+    currentDatabase,
+    switchDatabase
   } = useNotionStore();
   const [panelState, setPanelState] = useState<'expanded' | 'collapsed' | 'hidden'>('expanded');
   const location = useLocation();
@@ -93,6 +95,17 @@ function AppContent() {
     }
   }, [availableRootNodes, currentRootId, changeRootNode, location.pathname]);
 
+  // Route-level database switching - automatically switch database based on route
+  useEffect(() => {
+    const shouldUseObjectives = location.pathname === '/roadmap';
+    const targetDatabase = shouldUseObjectives ? 'objectives' : 'problems';
+
+    if (isConnected && currentDatabase !== targetDatabase) {
+      console.log(`Route-based database switch: ${currentDatabase} -> ${targetDatabase} (route: ${location.pathname})`);
+      switchDatabase(targetDatabase);
+    }
+  }, [location.pathname, isConnected, currentDatabase, switchDatabase]);
+
   const handleRefresh = async () => {
     if (isConnected) {
       await fetchProblems();
@@ -100,7 +113,7 @@ function AppContent() {
   };
 
   const isMatrixNewPage = location.pathname === '/problems/matrix';
-  const isRoadmapNewPage = location.pathname === '/objectives';
+  const isRoadmapNewPage = location.pathname === '/roadmap';
 
   return (
     <Box
@@ -115,12 +128,12 @@ function AppContent() {
       <Card
         sx={{
           position: 'absolute',
-          top: 16,
-          left: 16,
+          top: 8,
+          left: 8,
           width: 500,
-          maxHeight: panelState === 'expanded' ? 'calc(100vh - 2rem)' : 'auto',
+          maxHeight: panelState === 'expanded' ? 'calc(100vh - 1rem)' : 'auto',
           height: panelState === 'collapsed' ? 'auto' : 'auto',
-          minHeight: panelState === 'collapsed' ? 100 : 'auto',
+          minHeight: panelState === 'collapsed' ? 80 : 'auto',
           zIndex: 100,
           transition: 'all 0.3s ease',
           display: panelState === 'hidden' ? 'none' : 'block',
@@ -132,15 +145,17 @@ function AppContent() {
         }}
         elevation={0}
       >
-        <CardContent sx={{ p: 1.5, pb: '6px !important' }}>
+        <CardContent sx={{ p: 1, pb: '4px !important' }}>
           {/* Header */}
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
             <Typography
-              variant="h6"
+              variant="subtitle1"
               component="h1"
               sx={{
                 fontWeight: 'bold',
                 cursor: 'pointer',
+                fontSize: '1rem',
+                lineHeight: 1.2,
                 '&:hover': { color: 'primary.main' }
               }}
               onDoubleClick={() => setPanelState('hidden')}
@@ -193,9 +208,9 @@ function AppContent() {
 
           <Collapse in={panelState === 'expanded'}>
             {/* Main Navigation Tabs */}
-            <Box mb={1.5}>
+            <Box mb={1}>
               <Tabs
-                value={location.pathname === '/objectives' ? 1 : 0}
+                value={location.pathname === '/roadmap' ? 1 : 0}
                 variant="fullWidth"
                 sx={{
                   minHeight: 32,
@@ -245,11 +260,11 @@ function AppContent() {
                   label={
                     <Box display="flex" alignItems="center" gap={1}>
                       <Timeline fontSize="small" />
-                      Objectives
+                      Roadmap
                     </Box>
                   }
                   component={Link}
-                  to="/objectives"
+                  to="/roadmap"
                 />
               </Tabs>
             </Box>
@@ -273,13 +288,15 @@ function AppContent() {
                     fullWidth
                     size="small"
                     sx={{
-                      height: 32,
+                      height: 40,
                       '& .MuiToggleButton-root': {
                         border: '1px solid',
                         borderColor: 'primary.200',
                         color: 'primary.600',
                         fontSize: '0.75rem',
                         py: 0.5,
+                        height: 40,
+                        textTransform: 'none',
                         '&.Mui-selected': {
                           bgcolor: 'primary.main',
                           color: 'primary.contrastText',
@@ -300,7 +317,7 @@ function AppContent() {
                       sx={{ fontSize: '0.75rem', py: 0.5 }}
                     >
                       <AccountTree sx={{ fontSize: 16, mr: 0.5 }} />
-                      Mind Map
+                      Mind Map (tree)
                     </ToggleButton>
                     <ToggleButton
                       value="/problems/matrix"
@@ -309,7 +326,7 @@ function AppContent() {
                       sx={{ fontSize: '0.75rem', py: 0.5 }}
                     >
                       <GridView sx={{ fontSize: 16, mr: 0.5 }} />
-                      Matrix
+                      Matrix (impact-effort)
                     </ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
@@ -323,6 +340,7 @@ function AppContent() {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         fontSize: '0.875rem',
+                        height: 40,
                         '& fieldset': {
                           borderColor: 'primary.200'
                         },
@@ -336,13 +354,13 @@ function AppContent() {
                     }}
                   >
                     <InputLabel id="root-problem-select-label" sx={{ fontSize: '0.875rem' }}>
-                      Focus View
+                      Tree Root
                     </InputLabel>
                     <Select
                       labelId="root-problem-select-label"
                       id="root-problem-select"
                       value={currentRootId || ''}
-                      label="Focus View"
+                      label="Tree Root"
                       disabled={isLoading}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -358,26 +376,25 @@ function AppContent() {
                       sx={{
                         fontSize: '0.875rem',
                         '& .MuiSelect-select': {
-                          py: 1
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }
                       }}
                     >
                       {availableRootNodes.map((node) => (
-                        <MenuItem key={node.id} value={node.id} sx={{ fontSize: '0.875rem' }}>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Chip
-                              label={node.children.length}
-                              size="small"
-                              sx={{
-                                bgcolor: 'secondary.100',
-                                color: 'secondary.800',
-                                fontSize: '0.7rem',
-                                height: 16,
-                                minWidth: 20
-                              }}
-                            />
-                            {node.title}
-                          </Box>
+                        <MenuItem
+                          key={node.id}
+                          value={node.id}
+                          sx={{
+                            fontSize: '0.875rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title={node.title}
+                        >
+                          {node.title}
                         </MenuItem>
                       ))}
                     </Select>
@@ -389,7 +406,7 @@ function AppContent() {
           </Collapse>
 
           {/* Toggle Button - Always visible */}
-          <Box display="flex" justifyContent="center" mt={panelState === 'expanded' ? 1 : 0.25}>
+          <Box display="flex" justifyContent="center" mt={panelState === 'expanded' ? 0.5 : 0.25}>
             <IconButton
               onClick={() => setPanelState(panelState === 'expanded' ? 'collapsed' : 'expanded')}
               size="small"
@@ -419,8 +436,8 @@ function AppContent() {
           onClick={() => setPanelState('expanded')}
           sx={{
             position: 'absolute',
-            top: 16,
-            left: 16,
+            top: 8,
+            left: 8,
             zIndex: 99,
             bgcolor: 'background.paper',
             boxShadow: 3,
@@ -450,7 +467,7 @@ function AppContent() {
             <Route path="/problems" element={<Problems />} />
             <Route path="/problems/tree" element={<Problems />} />
             <Route path="/problems/matrix" element={<Matrix />} />
-            <Route path="/objectives" element={<Objectives />} />
+            <Route path="/roadmap" element={<Roadmap />} />
           </Routes>
         )}
       </div>
@@ -564,12 +581,12 @@ function App() {
     // Fallback: detect from current location
     const currentPath = window.location.pathname;
     // If we're at root or have typical SPA routes, return root
-    if (currentPath === '/' || currentPath.match(/^\/(problems|objectives)(\/.*)?$/)) {
+    if (currentPath === '/' || currentPath.match(/^\/(problems|roadmap)(\/.*)?$/)) {
       return '/';
     }
 
     // Try to extract base path by removing known routes
-    const pathWithoutRoute = currentPath.replace(/\/(problems|objectives)(\/.*)?$/, '');
+    const pathWithoutRoute = currentPath.replace(/\/(problems|roadmap)(\/.*)?$/, '');
     return pathWithoutRoute === '' ? '/' : pathWithoutRoute + '/';
   };
 

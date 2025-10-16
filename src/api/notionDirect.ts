@@ -36,8 +36,8 @@ class NotionDirectAPI {
         const getApiUrl = () => {
           // Get current page path and construct API URL relative to it
           const currentPath = window.location.pathname;
-          // Remove any trailing route paths (matrix, matrix-new)
-          const basePath = currentPath.replace(/\/(matrix|matrix-new)?$/, '');
+          // Remove any trailing route paths from the new route structure
+          const basePath = currentPath.replace(/\/(problems(\/tree|\/matrix)?|roadmap)$/, '');
           // Ensure we end with / for proper path joining
           const normalizedBase = basePath.endsWith('/') ? basePath : basePath + '/';
           return `${normalizedBase}api/notion/query`;
@@ -107,12 +107,14 @@ class NotionDirectAPI {
         (page.properties['After']?.relation || []) : [];
 
 
-      // Extract unique ID from ID field if available
-      const uniqueId = (page.properties as any)['ID']?.unique_id?.number ||
-                       (page.properties as any)['ID']?.rich_text?.[0]?.plain_text ||
-                       page.properties['ClickUp ID']?.rich_text?.[0]?.plain_text ||
-                       (page.properties as any)['ClickUp_ID']?.rich_text?.[0]?.plain_text ||
-                       (page.properties as any)['clickup_id']?.rich_text?.[0]?.plain_text;
+      // Extract unique ID from ID field if available - get complete prefix + number format
+      const uniqueIdField = (page.properties as any)['ID']?.unique_id;
+      const uniqueId = uniqueIdField
+        ? `${uniqueIdField.prefix || ''}-${uniqueIdField.number || ''}`
+        : (page.properties as any)['ID']?.rich_text?.[0]?.plain_text ||
+          page.properties['ClickUp ID']?.rich_text?.[0]?.plain_text ||
+          (page.properties as any)['ClickUp_ID']?.rich_text?.[0]?.plain_text ||
+          (page.properties as any)['clickup_id']?.rich_text?.[0]?.plain_text;
 
       // Extract status from the Status field
       const statusProperty = page.properties.Status;

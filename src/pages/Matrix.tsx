@@ -134,8 +134,7 @@ const Matrix: React.FC = () => {
           >
             {matrixNodes.map((node) => {
               const { x, y } = getNodePosition(node.impact, node.effort);
-              const rawId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
-              const nodeId = node.uniqueId ? `P-${rawId}` : rawId;
+              const nodeId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
 
               // Determine color based on quadrant
               const isHighImpact = node.impact > 5;
@@ -559,8 +558,7 @@ const Matrix: React.FC = () => {
               }}
             >
               {unmappableNodes.map((node) => {
-                const rawId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
-                const nodeId = node.uniqueId ? `P-${rawId}` : rawId;
+                const nodeId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
                 return (
                   <Box
                     key={node.id}
