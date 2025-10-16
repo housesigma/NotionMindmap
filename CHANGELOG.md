@@ -8,20 +8,22 @@
 
 ### ✨ 新功能 Features
 
-- **层级化路由结构**: 实现 `/`, `/problems`, `/problems/tree`, `/problems/matrix`, `/objectives` 路由架构
-- **Matrix可视化增强**: 添加unique_id字段支持，实现P-前缀标识符显示
+- **层级化路由结构**: 实现 `/`, `/problems`, `/problems/tree`, `/problems/matrix`, `/roadmap` 路由架构
+- **Matrix可视化增强**: 添加unique_id字段支持，实现完整前缀+数字标识符显示 (如: PLAN-2146)
 - **智能交互优化**: Matrix页面统计数据单行布局，unmappable项目改为右上角下拉交互
 - **节点选择控制**: 新增NodeSelectionControls组件，提升用户交互体验
 - **Minimap功能增强**: 支持拖拽、缩放和视觉改进
+- **路由级数据库切换**: 实现基于路由的自动数据库切换，解决页面导航数据不一致问题
 
 ### 🔄 重构 Refactoring
 
 - **页面文件重命名**:
   - `MindMapPage.tsx` → `Problems.tsx`
-  - `RoadmapNewPage.tsx` → `Objectives.tsx`
+  - `RoadmapNewPage.tsx` → `Objectives.tsx` → `Roadmap.tsx`
   - `MatrixPage.tsx` → `Matrix.tsx`
 - **组件架构优化**: 移除NotionConnection组件，简化应用结构
 - **导航系统重构**: 更新路由检测逻辑和导航链接
+- **数据库切换架构**: 从页面级切换重构为路由级集中管理，解决导航不一致问题
 
 ### 🎨 UI/UX改进
 
@@ -47,18 +49,19 @@
 ### 📋 待解决问题
 
 1. **Matrix映射问题**: 大量问题缺少Impact/Effort值，影响战略分析效果
-2. **路由切换问题**: 页面间导航时数据获取不稳定，需改进状态管理
+2. ~~**路由切换问题**: 页面间导航时数据获取不稳定，需改进状态管理~~ ✅ **已解决** - 通过路由级数据库切换修复
 
 ---
 
 ## 提交信息 Commit Details
 
 ```
+506b0d8 - Implement route-level database switching and rename Objectives to Roadmap
+955ff58 - Add comprehensive CHANGELOG.md with pending release tasks
 dc6703c - Update documentation with known issues and current project structure
 0a1c6cc - Restructure routes and optimize Matrix visualization
 0f35d03 - Enhance minimap with drag, zoom, and visual improvements
-b39bf78 - Add node selection controls and update development configuration
 ```
 
-**状态**: 4个commit待推送至origin/deploy-dev分支
-**影响**: 1,822行新增代码，254行删除，10个文件修改
+**状态**: 5个commit待推送至origin/deploy-dev分支
+**影响**: 新增路由级数据库切换功能，解决关键导航问题，页面重命名保持架构一致性

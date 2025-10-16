@@ -174,7 +174,7 @@ npm run preview
 2. **Choose Your View**:
    - **Problems** (`/problems` or `/problems/tree`): Hierarchical tree visualization with parent-child relationships
    - **Matrix** (`/problems/matrix`): Enhanced impact-effort matrix with accurate positioning and unique_id support
-   - **Objectives** (`/objectives`): Timeline roadmap view for objective-based workflows
+   - **Roadmap** (`/roadmap`): Timeline roadmap view for objective-based workflows
 
 3. **Focus Your Data**:
    - Use the "Focus View" selector to choose a root node
@@ -205,7 +205,7 @@ npm run preview
 ├── /pages        # Page components
 │   ├── Problems.tsx       # Mind map view (renamed from MindMapPage)
 │   ├── Matrix.tsx         # Enhanced impact-effort matrix (renamed from MatrixPage)
-│   └── Objectives.tsx     # Timeline roadmap view (renamed from RoadmapNewPage)
+│   └── Roadmap.tsx        # Timeline roadmap view (renamed from RoadmapNewPage -> Objectives)
 ├── /store        # Zustand state management
 │   └── notionStore.ts     # Application state with caching and database switching
 ├── /types        # TypeScript type definitions
@@ -306,28 +306,23 @@ The following issues have been identified and need to be resolved:
 - Provide recommendations for Impact/Effort scoring
 - Add data completeness dashboard with actionable insights
 
-### 2. 切换路由时数据获取失败问题 (Data Fetching Failure When Switching Routes)
-**Issue**: Navigation between different views (Problems, Matrix, Objectives) sometimes fails to load data properly.
+### 2. ~~切换路由时数据获取失败问题 (Data Fetching Failure When Switching Routes)~~ ✅ **RESOLVED**
+**Issue**: Navigation between different views (Problems, Matrix, Roadmap) sometimes failed to load data properly.
 
-**Details**:
-- Inconsistent data state when switching between route paths
-- Database switching logic may not trigger correctly for Objectives view
-- Race conditions between route changes and data fetching
-- State persistence issues across navigation
+**Solution Implemented**:
+- ✅ Added centralized route-level database switching in App.tsx
+- ✅ Removed redundant page-level database switching logic
+- ✅ Fixed asymmetric database switching (visiting /roadmap first then /problems)
+- ✅ Ensured consistent data state across all route transitions
 
-**Impact**:
-- Poor user experience with blank or stale views
-- Users need to manually refresh to see updated data
-- Unreliable navigation between visualization modes
-
-**Proposed Solutions**:
-- Implement proper route-based data loading with loading states
-- Add automatic retry mechanisms for failed data fetches
-- Improve state management consistency across routes
-- Add route-specific data validation and error boundaries
+**Technical Details**:
+- Implemented useEffect hook that monitors `location.pathname` changes
+- Automatically switches to 'objectives' database for `/roadmap` route
+- Automatically switches to 'problems' database for all other routes
+- Prevents race conditions and state inconsistencies
 
 ### Priority
-Both issues significantly impact user experience and should be addressed in the next development cycle.
+The remaining Matrix mapping issue still significantly impacts user experience and should be addressed in the next development cycle. The route switching issue has been successfully resolved.
 
 ## Matrix Visualization Features
 
