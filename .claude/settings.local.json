@@ -21,7 +21,8 @@
       "Bash(docker build:*)",
       "Bash(open:*)",
       "Bash(docker:*)",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

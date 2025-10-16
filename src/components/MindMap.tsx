@@ -141,6 +141,14 @@ const MindMapInner: React.FC<MindMapProps> = ({
             };
             return colors[status] || '#6b7280';
           }}
+          pannable={true}
+          zoomable={true}
+          position="bottom-right"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
         />
       </ReactFlow>
     </div>

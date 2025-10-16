@@ -485,7 +485,26 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
         attributionPosition="top-right"
       >
         <Controls />
-        <MiniMap />
+        <MiniMap
+          nodeColor={(node) => {
+            const status = node.data?.status;
+            const colors: Record<string, string> = {
+              'done': '#10b981',
+              'in-progress': '#3b82f6',
+              'blocked': '#ef4444',
+              'todo': '#6b7280',
+            };
+            return colors[status] || '#6b7280';
+          }}
+          pannable={true}
+          zoomable={true}
+          position="bottom-right"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
+        />
         <Background variant={'dots' as BackgroundVariant} gap={12} size={1} />
       </ReactFlow>
     </div>
