@@ -4,7 +4,7 @@ import type { NotionProblemPage, ProblemNode, ProblemTree } from '../types/notio
 class NotionDirectAPI {
   private apiKey: string | null = null;
   private databases = {
-    problems: '268c2345-ab46-80e0-876d-ddbd9ebb5383', // Problems database ID
+    problems: import.meta.env.VITE_NOTION_DATABASE_ID, // Problems database ID from env
     objectives: '272c2345ab468057a199e6f406cc6384'     // Objective database ID
   };
   private currentDatabase: 'problems' | 'objectives' = 'problems';
@@ -283,9 +283,9 @@ class NotionDirectAPI {
     // Use database-specific root nodes or custom root
     let ROOT_NODE_ID: string | undefined = customRootId;
 
-    // Only use hardcoded root for Problems database if no custom root specified
+    // Only use environment root for Problems database if no custom root specified
     if (!ROOT_NODE_ID && this.currentDatabase === 'problems') {
-      ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
+      ROOT_NODE_ID = import.meta.env.VITE_NOTION_ROOT_NODE_ID;
     }
 
     // Find the root node
