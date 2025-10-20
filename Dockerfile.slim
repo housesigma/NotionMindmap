@@ -1,0 +1,58 @@
+# 多阶段构建 - 大幅减小镜像大小
+# 阶段1: 构建阶段（包含所有开发依赖）
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+
+# 安装所有依赖（包括开发依赖用于构建）
+RUN npm ci --silent
+
+# 复制源代码
+COPY . .
+
+# 构建前端应用
+RUN npm run build
+
+# 阶段2: 生产阶段（只包含运行时需要的文件）
+FROM node:20-alpine AS production
+
+# 安装curl用于健康检查，并立即清理
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# 先创建用户（避免后面的chown操作）
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeuser -u 1001
+
+# 复制package.json（运行时需要）
+COPY --chown=nodeuser:nodejs package*.json ./
+
+# 只安装生产依赖
+RUN npm ci --only=production --silent && \
+    npm cache clean --force
+
+# 复制服务器文件
+COPY --chown=nodeuser:nodejs server.js ./
+
+# 从构建阶段复制构建好的前端文件
+COPY --chown=nodeuser:nodejs --from=builder /app/dist ./dist
+
+# 切换到非root用户
+USER nodeuser
+
+# 暴露端口
+EXPOSE 3001 5174
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/api/health || exit 1
+
+# 设置生产环境
+ENV NODE_ENV=production
+
+# 启动命令
+CMD ["sh", "-c", "npm run server & npm run preview -- --host 0.0.0.0 --port 5174"]
