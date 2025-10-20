@@ -24,8 +24,8 @@ RUN adduser -S nodeuser -u 1001
 RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
-# Expose both ports: 3001 for API server, 5173 for Vite dev server
-EXPOSE 3001 5174
+# Expose both ports: 3001 for API server, 4001 for Vite dev server
+EXPOSE 3001 4001
 
 # Health check for API server
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
@@ -35,4 +35,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 ENV NODE_ENV=production
 
 # Start both servers: API server in background, then Vite preview server
-CMD ["sh", "-c", "npm run server & npm run preview -- --host 0.0.0.0 --port 5174"]
+CMD ["sh", "-c", "npm run server & npm run preview -- --host 0.0.0.0 --port 4001"]

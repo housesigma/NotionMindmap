@@ -11,7 +11,7 @@ NotionMindmap - A React + TypeScript application that visualizes Notion database
 ```bash
 # IMPORTANT: Need to run BOTH servers
 npm run server     # Terminal 1: Start Express backend server on port 3001 (REQUIRED)
-npm run dev        # Terminal 2: Start Vite dev server on port 5173
+npm run dev        # Terminal 2: Start Vite dev server on port 4001
 npm run build      # TypeScript check + Vite production build
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
@@ -69,5 +69,5 @@ npm run preview    # Preview production build
 - **Database ID**: Hardcoded as `268c2345-ab46-80e0-876d-ddbd9ebb5383` in `notionDirect.ts`
 - **Pagination**: Server fetches ALL pages (handles 1000+ items)
 - **CORS**: Proxy server required - Notion API doesn't support browser CORS
-- **Port Configuration**: Frontend on 5173, Backend on 3001
+- **Port Configuration**: Frontend on 4001, Backend on 3001
 - **Property Mapping**: Uses exact field names from Notion (case-sensitive)

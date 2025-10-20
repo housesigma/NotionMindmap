@@ -16,7 +16,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0', // Listen on all interfaces
-    port: 5174,
+    port: 4001,
     allowedHosts: [
       '.ngrok-free.app',
       '.ngrok.io',

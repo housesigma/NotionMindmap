@@ -28,7 +28,7 @@ An interactive web application that connects to your Notion database and visuali
 ```
 ┌─────────────────────────────────────────────┐
 │              React Frontend                 │
-│             (localhost:5173)                │
+│             (localhost:4001)                │
 │  ┌─────────────┬─────────────┬─────────────┐ │
 │  │  Mind Map   │   Matrix    │ Matrix New  │ │
 │  │    View     │    View     │    View     │ │
@@ -156,7 +156,7 @@ npm run server
 npm run dev
 ```
 
-The application will open at [http://localhost:5173](http://localhost:5173)
+The application will open at [http://localhost:4001](http://localhost:4001)
 
 ### Production Build
 ```bash
@@ -279,7 +279,7 @@ const ROOT_NODE_ID = '269c2345-ab46-819c-9b6c-e2eda20aba4c';
    - Verify Parent Problem relations are set correctly
 
 4. **Port conflicts**
-   - Frontend runs on port 5173
+   - Frontend runs on port 4001
    - Backend runs on port 3001
    - Change ports in `vite.config.ts` and `server.js` if needed
 
