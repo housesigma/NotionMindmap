@@ -40,6 +40,47 @@ app.post('/api/notion/query', async (req, res) => {
   }
 });
 
+// Endpoint to fetch specific pages by their IDs
+app.post('/api/notion/pages', async (req, res) => {
+  try {
+    const { apiKey, pageIds } = req.body;
+
+    if (!Array.isArray(pageIds) || pageIds.length === 0) {
+      return res.status(400).json({ error: 'pageIds must be a non-empty array' });
+    }
+
+    // Fetch all pages in parallel
+    const pagePromises = pageIds.map(pageId =>
+      fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        }
+      }).then(response => {
+        if (!response.ok) {
+          console.warn(`Failed to fetch page ${pageId}: ${response.statusText}`);
+          return null;
+        }
+        return response.json();
+      })
+    );
+
+    const pages = await Promise.all(pagePromises);
+
+    // Filter out any null results (failed fetches)
+    const validPages = pages.filter(page => page !== null);
+
+    res.json({ pages: validPages });
+  } catch (error) {
+    console.error('Error fetching pages from Notion:', error);
+    res.status(500).json({
+      error: error.message || 'Failed to fetch pages from Notion API'
+    });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });

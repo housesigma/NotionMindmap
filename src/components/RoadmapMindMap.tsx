@@ -87,21 +87,6 @@ function calculateNodeLevel(node: ProblemNode, nodeMap: Map<string, ProblemNode>
   return calculateNodeLevel(parent, nodeMap) + 1;
 }
 
-// Helper function to load cached problems data
-const loadCachedProblemsData = (): Map<string, ProblemNode> => {
-  try {
-    const cached = localStorage.getItem('notion-mindmap-data-problems');
-    if (cached) {
-      const data = JSON.parse(cached);
-      const nodes = notionAPI.convertToNodes(data.rawPages);
-      return nodes;
-    }
-  } catch (error) {
-    console.warn('Failed to load cached problems data:', error);
-  }
-  return new Map();
-};
-
 const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
   nodes,
   onNodeClick
@@ -110,46 +95,64 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const { switchDatabase, allNodes: problemNodes, currentDatabase } = useNotionStore();
+  const [relatedProblems, setRelatedProblems] = useState<ProblemNode[]>([]);
 
-  // Load problems data from cache for cross-database relationships
-  const cachedProblemsNodes = useMemo(() => loadCachedProblemsData(), []);
+  // Fetch problems referenced in objectives' problemIds field
+  useEffect(() => {
+    const fetchProblems = async () => {
+      // Collect all unique problem IDs from objectives
+      const problemIds = new Set<string>();
+
+      console.log('Checking objectives for problemIds field...');
+      nodes.forEach(node => {
+        console.log(`Node "${node.title}" has problemIds:`, node.problemIds);
+        if (node.problemIds && node.problemIds.length > 0) {
+          node.problemIds.forEach(id => problemIds.add(id));
+        }
+      });
+
+      console.log(`Total unique problem IDs found: ${problemIds.size}`);
+
+      if (problemIds.size === 0) {
+        setRelatedProblems([]);
+        return;
+      }
+
+      console.log(`Fetching ${problemIds.size} problems referenced in objectives...`);
+
+      try {
+        const problemPages = await notionAPI.fetchPagesByIds(Array.from(problemIds));
+        const problemNodesMap = notionAPI.convertToNodes(problemPages);
+        const problemNodesArray = Array.from(problemNodesMap.values()).map(node => ({
+          ...node,
+          isObjective: false // Mark as problems, not objectives
+        }));
+        setRelatedProblems(problemNodesArray);
+        console.log(`Loaded ${problemNodesArray.length} related problems`);
+      } catch (error) {
+        console.error('Failed to fetch related problems:', error);
+        setRelatedProblems([]);
+      }
+    };
+
+    if (nodes.length > 0) {
+      fetchProblems();
+    }
+  }, [nodes]);
 
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!nodes.length) {
       return { layoutNodes: [], layoutEdges: [] };
     }
 
-    // Collect all related problem IDs from objectives
-    const relatedProblemIds = new Set<string>();
-    nodes.forEach(node => {
-      if (node.problemIds) {
-        node.problemIds.forEach(problemId => relatedProblemIds.add(problemId));
-      }
-    });
-
-    // Get related problem nodes from the cached problems database
-    const relatedProblems: ProblemNode[] = [];
-    if (relatedProblemIds.size > 0) {
-      relatedProblemIds.forEach(problemId => {
-        const problemNode = cachedProblemsNodes.get(problemId);
-        if (problemNode) {
-          // Mark as non-objective (problem node) and add to collection
-          relatedProblems.push({
-            ...problemNode,
-            isObjective: false
-          });
-        }
-      });
-    }
-
     // Combine objectives and related problems
     const allNodes = [...nodes, ...relatedProblems];
     const nodeMap = new Map(allNodes.map(node => [node.id, node]));
-    const sortedNodes = topologicalSort(nodes); // Only sort objectives, not problems
+    const sortedNodes = topologicalSort(nodes); // Only sort objectives for temporal ordering
 
     // Position nodes based on temporal and hierarchical order
-    const nodeSpacing = 350;
-    const verticalSpacing = 200;
+    const nodeSpacing = 600; // Increased horizontal spacing between root nodes
+    const verticalSpacing = 350; // Increased vertical spacing between levels
     const temporalPositions = new Map<string, { x: number; level: number }>();
 
     // First pass: Calculate temporal positions
@@ -191,7 +194,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
             let x: number;
 
             if (node.parentId && finalPositions.has(node.parentId)) {
-              // Child node: spread siblings around parent position
+              // Child node: position directly below parent
               const parentPos = finalPositions.get(node.parentId)!;
               const siblingCount = siblings.length;
 
@@ -199,8 +202,8 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
                 // Single child: position directly under parent
                 x = parentPos.x;
               } else {
-                // Multiple children: spread them out
-                const childSpacing = 350; // Increased spacing between siblings
+                // Multiple children: spread them out slightly around parent
+                const childSpacing = 450; // Increased spacing between siblings
                 const totalWidth = (siblingCount - 1) * childSpacing;
                 const startX = parentPos.x - (totalWidth / 2);
                 x = startX + (siblingIndex * childSpacing);
@@ -212,11 +215,11 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
 
             const y = level * verticalSpacing;
 
-            // Collision detection and adjustment
+            // Collision detection for all nodes
             let finalX = x;
             let attempts = 0;
-            const maxAttempts = 20;
-            const minDistance = 280; // Minimum distance between any two nodes
+            const maxAttempts = 30;
+            const minDistance = 320; // Minimum horizontal distance between any two nodes
 
             while (attempts < maxAttempts) {
               let collision = false;
@@ -235,7 +238,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
 
               // Adjust position - alternate between left and right
               const direction = attempts % 2 === 0 ? 1 : -1;
-              const offset = Math.ceil(attempts / 2) * minDistance;
+              const offset = Math.ceil(attempts / 2) * (minDistance * 0.5);
               finalX = x + (direction * offset);
               attempts++;
             }
@@ -245,41 +248,81 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
         });
       });
 
-    // Position related problems near their objectives
-    relatedProblems.forEach((problemNode, problemIndex) => {
-      // Find the objective that references this problem
+    // Position related problems directly below their objectives
+    // Group problems by their parent objective
+    const problemsByObjective = new Map<string, string[]>();
+    relatedProblems.forEach(problemNode => {
       const relatedObjective = nodes.find(obj =>
         obj.problemIds && obj.problemIds.includes(problemNode.id)
       );
+      if (relatedObjective) {
+        if (!problemsByObjective.has(relatedObjective.id)) {
+          problemsByObjective.set(relatedObjective.id, []);
+        }
+        problemsByObjective.get(relatedObjective.id)!.push(problemNode.id);
+      }
+    });
 
-      if (relatedObjective && finalPositions.has(relatedObjective.id)) {
-        const objectivePos = finalPositions.get(relatedObjective.id)!;
-        // Position problems to the right of their related objectives
-        const problemX = objectivePos.x + 500; // Offset to the right
-        const problemY = objectivePos.y + (problemIndex * 100); // Stack if multiple problems per objective
+    // Position each problem directly below its objective
+    problemsByObjective.forEach((problemIds, objectiveId) => {
+      if (finalPositions.has(objectiveId)) {
+        const objectivePos = finalPositions.get(objectiveId)!;
+        const problemSpacing = 350; // Vertical spacing between objective and problems
 
-        finalPositions.set(problemNode.id, {
-          x: problemX,
-          y: problemY,
-          level: objectivePos.level // Same level as objective
+        problemIds.forEach((problemId, index) => {
+          // Position directly below the objective
+          const problemX = objectivePos.x;
+          const problemY = objectivePos.y + problemSpacing + (index * 150); // Stack multiple problems vertically
+
+          finalPositions.set(problemId, {
+            x: problemX,
+            y: problemY,
+            level: objectivePos.level + 1 // One level below objective
+          });
         });
       }
     });
 
     // Create React Flow nodes
     const layoutNodes: Node[] = [];
+
+    // Debug: Log all node types to see what we're working with
+    console.log('All node types:', Array.from(nodeMap.values()).map(n => ({ title: n.title, type: n.type })));
+
     finalPositions.forEach(({ x, y }, nodeId) => {
       const node = nodeMap.get(nodeId)!;
+      const isOKR = node.type?.toLowerCase().includes('okr') ||
+                    node.title.toLowerCase().includes('okr') ||
+                    node.tags?.some(tag => tag.toLowerCase().includes('okr')) ||
+                    false;
+
+      const isBAU = node.type?.toLowerCase().includes('bau') ||
+                    node.title.toLowerCase().includes('bau') ||
+                    node.tags?.some(tag => tag.toLowerCase().includes('bau')) ||
+                    false;
+
+      // Debug logging for type detection
+      console.log('Node:', node.title, '| Type:', node.type, '| isOKR:', isOKR, '| isBAU:', isBAU);
+
       layoutNodes.push({
         id: nodeId,
         type: 'custom',
         position: { x, y },
+        zIndex: 10,
         data: {
           label: node.title,
-          node: node,
+          description: node.description,
+          status: node.status,
+          priority: node.priority,
+          tags: node.tags,
+          notionUrl: node.notionUrl,
+          depth: finalPositions.get(nodeId)!.level,
           isExpanded: true,
-          hasChildren: node.children.length > 0,
+          hasChildren: false, // Disable collapse functionality for roadmap
           isObjective: node.isObjective !== false, // Default to objective unless explicitly marked as problem
+          isOKR: isOKR, // Flag for OKR nodes
+          isBAU: isBAU, // Flag for BAU nodes
+          period: node.period, // Period value
           onToggleCollapse: () => {} // No collapse functionality for roadmap
         },
       });
@@ -290,32 +333,38 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
 
     // Parent-child relationships (vertical, dashed gray lines - bottom to top)
     nodes.forEach(node => {
-      if (node.parentId && finalPositions.has(node.parentId)) {
-        layoutEdges.push({
-          id: `parent-${node.parentId}-${node.id}`,
-          source: node.parentId,
-          target: node.id,
-          sourceHandle: 'bottom',
-          targetHandle: 'top',
-          type: 'straight',
-          style: {
-            stroke: '#6B7280',
-            strokeWidth: 2,
-            strokeDasharray: '5,5',
-          },
-          label: 'parent-child',
-          labelBgPadding: [8, 4],
-          labelBgBorderRadius: 4,
-          labelBgStyle: {
-            fill: '#F3F4F6',
-            fillOpacity: 0.8,
-          },
-          labelStyle: {
-            fontSize: '10px',
-            fill: '#6B7280',
-          },
-        });
-      }
+      // Connect to all parent objectives if multiple parents exist
+      const parentIdsToConnect = node.parentIds && node.parentIds.length > 0 ? node.parentIds : (node.parentId ? [node.parentId] : []);
+
+      parentIdsToConnect.forEach(parentId => {
+        if (finalPositions.has(parentId)) {
+          layoutEdges.push({
+            id: `parent-${parentId}-${node.id}`,
+            source: parentId,
+            target: node.id,
+            sourceHandle: 'bottom',
+            targetHandle: 'top',
+            type: 'straight',
+            style: {
+              stroke: '#6B7280',
+              strokeWidth: 2,
+              strokeDasharray: '5,5',
+            },
+            zIndex: 0,
+            label: 'parent-child',
+            labelBgPadding: [8, 4],
+            labelBgBorderRadius: 4,
+            labelBgStyle: {
+              fill: '#F3F4F6',
+              fillOpacity: 0.8,
+            },
+            labelStyle: {
+              fontSize: '10px',
+              fill: '#6B7280',
+            },
+          });
+        }
+      });
     });
 
     // Before/After relationships (horizontal, solid colored lines)
@@ -327,6 +376,8 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
             id: `after-${afterId}-${node.id}`,
             source: afterId,
             target: node.id,
+            sourceHandle: 'right',
+            targetHandle: 'left',
             type: 'smoothstep',
             style: {
               stroke: '#2563EB',
@@ -338,6 +389,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
               height: 20,
               color: '#2563EB',
             },
+            zIndex: 0,
             label: 'after',
             labelBgPadding: [8, 4],
             labelBgBorderRadius: 4,
@@ -361,6 +413,8 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
             id: `before-${node.id}-${beforeId}`,
             source: node.id,
             target: beforeId,
+            sourceHandle: 'right',
+            targetHandle: 'left',
             type: 'smoothstep',
             style: {
               stroke: '#10B981',
@@ -372,6 +426,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
               height: 20,
               color: '#10B981',
             },
+            zIndex: 0,
             label: 'before',
             labelBgPadding: [8, 4],
             labelBgBorderRadius: 4,
@@ -391,16 +446,17 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
 
     // Objective-to-problem relationship edges (purple, dashed lines)
     nodes.forEach(objectiveNode => {
-      if (objectiveNode.problemIds) {
+      if (objectiveNode.problemIds && objectiveNode.problemIds.length > 0) {
         objectiveNode.problemIds.forEach(problemId => {
-          if (finalPositions.has(problemId)) {
+          // Only create edge if this problem is in our related problems
+          if (finalPositions.has(problemId) && finalPositions.has(objectiveNode.id)) {
             layoutEdges.push({
               id: `objective-problem-${objectiveNode.id}-${problemId}`,
               source: objectiveNode.id,
               target: problemId,
               sourceHandle: 'bottom',
               targetHandle: 'top',
-              type: 'smoothstep',
+              type: 'straight',
               style: {
                 stroke: '#8B5CF6',
                 strokeWidth: 2,
@@ -412,6 +468,7 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
                 height: 16,
                 color: '#8B5CF6',
               },
+              zIndex: 0,
               label: 'problems',
               labelBgPadding: [8, 4],
               labelBgBorderRadius: 4,
@@ -430,8 +487,51 @@ const RoadmapMindMapInner: React.FC<RoadmapMindMapProps> = ({
       }
     });
 
+    // Problem-to-objective relationship edges (purple, dashed lines - reverse direction)
+    relatedProblems.forEach(problemNode => {
+      if (problemNode.objectiveIds) {
+        problemNode.objectiveIds.forEach(objectiveId => {
+          // Only create edge if this objective is in our current view
+          if (finalPositions.has(objectiveId) && finalPositions.has(problemNode.id)) {
+            layoutEdges.push({
+              id: `problem-objective-${problemNode.id}-${objectiveId}`,
+              source: problemNode.id,
+              target: objectiveId,
+              sourceHandle: 'top',
+              targetHandle: 'bottom',
+              type: 'smoothstep',
+              style: {
+                stroke: '#8B5CF6',
+                strokeWidth: 2,
+                strokeDasharray: '8,4',
+              },
+              markerEnd: {
+                type: 'arrowclosed',
+                width: 16,
+                height: 16,
+                color: '#8B5CF6',
+              },
+              zIndex: 0,
+              label: 'objective',
+              labelBgPadding: [8, 4],
+              labelBgBorderRadius: 4,
+              labelBgStyle: {
+                fill: '#F3E8FF',
+                fillOpacity: 0.9,
+              },
+              labelStyle: {
+                fontSize: '10px',
+                fill: '#8B5CF6',
+                fontWeight: 'bold',
+              },
+            });
+          }
+        });
+      }
+    });
+
     return { layoutNodes, layoutEdges };
-  }, [nodes, cachedProblemsNodes]);
+  }, [nodes, relatedProblems]);
 
   useEffect(() => {
     if (layoutNodes.length > 0) {

@@ -3,6 +3,7 @@ export interface ProblemNode {
   title: string;
   description?: string;
   parentId: string | null;
+  parentIds?: string[]; // Multiple parent IDs
   children: string[];
   status?: 'todo' | 'in-progress' | 'done' | 'blocked';
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -17,7 +18,10 @@ export interface ProblemNode {
   beforeIds?: string[];  // For temporal "Before" relationships
   afterIds?: string[];   // For temporal "After" relationships
   problemIds?: string[]; // For Problems_OpportunityTree relationships (objectives to problems)
+  objectiveIds?: string[]; // For Objective field (problems to objectives - reverse relationship)
   isObjective?: boolean; // To distinguish objectives from problems
+  type?: string; // Type field (e.g., "OKR", "Initiative", etc.)
+  period?: string; // Period field (e.g., "Q1 2025", "2025", etc.)
 }
 
 export interface NotionProblemPage {
@@ -63,6 +67,16 @@ export interface NotionProblemPage {
         name: string;
       }>;
     };
+    Type?: {
+      select?: {
+        name: string;
+      };
+    };
+    Period?: {
+      select?: {
+        name: string;
+      };
+    };
     Description?: {
       rich_text: Array<{
         plain_text: string;
@@ -88,6 +102,11 @@ export interface NotionProblemPage {
       }>;
     };
     Problems_OpportunityTree?: {
+      relation: Array<{
+        id: string;
+      }>;
+    };
+    Objective?: {
       relation: Array<{
         id: string;
       }>;

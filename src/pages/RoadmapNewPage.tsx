@@ -16,7 +16,12 @@ const RoadmapNewPage: React.FC = () => {
   const nodes = Array.from(allNodes.values());
 
   return (
-    <RoadmapMindMap nodes={nodes} />
+    <RoadmapMindMap
+      nodes={nodes}
+      onNodeClick={(nodeId) => {
+        console.log('Node clicked:', nodeId);
+      }}
+    />
   );
 };
 

@@ -68,6 +68,45 @@ class NotionDirectAPI {
     }
   }
 
+  async fetchPagesByIds(pageIds: string[]): Promise<NotionProblemPage[]> {
+    if (!this.apiKey) {
+      throw new Error('Notion API key not provided');
+    }
+
+    if (!pageIds || pageIds.length === 0) {
+      return [];
+    }
+
+    try {
+      const apiBaseUrl = '';
+
+      const response = await fetch(
+        `${apiBaseUrl}/api/notion/pages`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            apiKey: this.apiKey,
+            pageIds: pageIds
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch pages: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`Fetched ${data.pages.length} pages by IDs`);
+      return data.pages;
+    } catch (error) {
+      console.error('Error fetching pages from Notion:', error);
+      throw error;
+    }
+  }
+
   convertToNodes(pages: NotionProblemPage[]): Map<string, ProblemNode> {
     const nodes = new Map<string, ProblemNode>();
 
@@ -137,18 +176,48 @@ class NotionDirectAPI {
                               page.properties['Solution(s)']?.relation ||
                               [];
 
-      // Extract Problems_OpportunityTree relationships
-      const problemsRelation = page.properties.Problems_OpportunityTree?.relation || [];
+      // Debug: Log all available relation properties for objectives
+      if (this.currentDatabase === 'objectives') {
+        const relationProps = Object.keys(page.properties).filter(key => {
+          const prop = (page.properties as any)[key];
+          return prop && prop.relation;
+        });
+        if (relationProps.length > 0) {
+          console.log(`Objective "${title}" has these relation properties:`, relationProps);
+        }
+      }
+
+      // Extract problems relationships (try "Problems", "problems", and "Problems_OpportunityTree" field names)
+      const problemsRelation = page.properties.Problems?.relation ||
+                               page.properties.problems?.relation ||
+                               page.properties.Problems_OpportunityTree?.relation || [];
+
+      // Debug: Log when we find problems relation
+      if (problemsRelation.length > 0) {
+        console.log(`Page "${title}" has ${problemsRelation.length} problems:`, problemsRelation.map((p: any) => p.id));
+      }
+
+      // Extract Objective relationships (problems referencing objectives)
+      const objectiveRelation = page.properties.Objective?.relation || [];
+
+      // Extract Type field (e.g., "OKR", "Initiative", etc.)
+      const typeValue = page.properties.Type?.select?.name;
+
+      // Extract Period field (e.g., "Q1 2025", "2025", etc.)
+      const periodValue = page.properties.Period?.select?.name;
 
       const node: ProblemNode = {
         id: page.id,
         title,
         description: page.properties.Description?.rich_text?.[0]?.plain_text,
         parentId: parentRelation[0]?.id || null,
+        parentIds: parentRelation.map((parent: any) => parent.id),
         children: childrenRelation.map((child: any) => child.id),
         status: this.normalizeStatus(statusName),
         priority: this.normalizePriority(page.properties.Priority?.select?.name),
         tags: page.properties.Tags?.multi_select?.map(tag => tag.name) || [],
+        type: typeValue,
+        period: periodValue,
         createdAt: page.created_time,
         updatedAt: page.last_edited_time,
         notionUrl: page.url,
@@ -159,6 +228,7 @@ class NotionDirectAPI {
         beforeIds: beforeRelation.map((before: any) => before.id),
         afterIds: afterRelation.map((after: any) => after.id),
         problemIds: problemsRelation.map((problem: any) => problem.id),
+        objectiveIds: objectiveRelation.map((objective: any) => objective.id),
         isObjective: this.currentDatabase === 'objectives',
       };
 
