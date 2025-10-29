@@ -49,6 +49,7 @@ pids
 # Temporary folders
 tmp
 temp
+*.tar
 
 # Docker files (not needed inside container)
 Dockerfile
