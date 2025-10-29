@@ -10,9 +10,9 @@ export default defineConfig({
     // Disable Vite client script injection in production-like environments
     __VITE_IS_MODERN__: 'false',
     // Define environment variables directly in config
-    'import.meta.env.VITE_NOTION_API_KEY': JSON.stringify("your-notion-api-key-here"),
-    'import.meta.env.VITE_NOTION_DATABASE_ID': JSON.stringify("your-database-id-here"),
-    'import.meta.env.VITE_NOTION_ROOT_NODE_ID': JSON.stringify("your-root-node-id-here")
+    // 'import.meta.env.VITE_NOTION_API_KEY': JSON.stringify("your-notion-api-key-here"),
+    // 'import.meta.env.VITE_NOTION_DATABASE_ID': JSON.stringify("your-database-id-here"),
+    // 'import.meta.env.VITE_NOTION_ROOT_NODE_ID': JSON.stringify("your-root-node-id-here")
   },
   server: {
     host: '0.0.0.0', // Listen on all interfaces
