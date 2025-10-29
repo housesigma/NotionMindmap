@@ -74,11 +74,11 @@ npm run server
 ```bash
 npm run dev
 # Should see: VITE v7.x.x ready...
-# ➜  Local:   http://localhost:5173/
+# ➜  Local:   http://localhost:4001/
 ```
 
 ### 6. Open in Browser
-Navigate to http://localhost:5173
+Navigate to http://localhost:4001
 
 You should see:
 - "Connected to Notion" indicator
