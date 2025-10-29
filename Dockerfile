@@ -1,5 +1,5 @@
 # Use official Node.js runtime as base image
-FROM node:20-alpine
+FROM node:20
 
 # Set working directory in the container
 WORKDIR /app
@@ -17,8 +17,8 @@ COPY . .
 RUN npm run build
 
 # Create a non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodeuser -u 1001
+RUN groupadd -g 1001 nodejs
+RUN useradd -r -u 1001 -g nodejs nodeuser
 
 # Change ownership of the app directory
 RUN chown -R nodeuser:nodejs /app
@@ -34,5 +34,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Set NODE_ENV to production to avoid Vite client injection
 ENV NODE_ENV=production
 
-# Start both servers: API server in background, then Vite preview server
-CMD ["sh", "-c", "npm run server & npm run preview -- --host 0.0.0.0 --port 4001"]
+# Start both servers: API server in background, then Vite dev server
+CMD ["sh", "-c", "npm run server & sleep 2 && npm run dev"]

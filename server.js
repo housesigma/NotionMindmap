@@ -44,7 +44,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(3001, () => {
+  console.log(`Server running on port 3001`);
 });
