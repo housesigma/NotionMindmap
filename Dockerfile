@@ -24,15 +24,15 @@ RUN useradd -r -u 1001 -g nodejs nodeuser
 RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
-# Expose both ports: 3001 for API server, 4001 for Vite dev server
-EXPOSE 3001 4001
+# Expose port 3001 for Express server (serves both API and static files)
+EXPOSE 3001
 
 # Health check for API server
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-# Set NODE_ENV to production to avoid Vite client injection
+# Set NODE_ENV to production
 ENV NODE_ENV=production
 
-# Start both servers: API server in background, then Vite dev server
-CMD ["sh", "-c", "npm run server & sleep 2 && npm run dev"]
+# Start Express server (serves API + static files)
+CMD ["npm", "run", "server"]
