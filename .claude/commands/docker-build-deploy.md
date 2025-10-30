@@ -34,6 +34,7 @@ Automatically generate Dockerfile, build Docker image, save as tar, and deploy t
 
 I'll help you package and deploy your project with the following steps:
 
+0. **Auto-increment Version**: Automatically increment patch version in package.json before deployment
 1. **Analyze Project Structure**: Detect project type and dependencies
 2. **Generate Dockerfile**: Create optimized Dockerfile ONLY if one doesn't exist (no existing code modification)
 3. **Build Docker Image**: Build with proper platform support (--platform linux/amd64 for ARM64)
@@ -93,6 +94,14 @@ CMD ["./main"]
 ## Execution Steps
 
 I'll perform these operations using Claude's cross-platform tools:
+
+### 0. **Version Auto-increment**
+- **Check for version increment script**: Look for `scripts/increment-version.js` or similar
+- **Read current version**: Parse `package.json` to get current version (e.g., "0.0.1")
+- **Increment patch version**: Automatically bump patch number (0.0.1 → 0.0.2)
+- **Update package.json**: Write new version back to package.json
+- **Log version change**: Display old → new version for user visibility
+- **Commit version bump**: Create git commit with version increment (optional)
 
 ### 1. **Project Analysis & App Name Validation**
 - Use `Bash` tool to list project files (works on all platforms)

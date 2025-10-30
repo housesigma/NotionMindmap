@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { version } = require('./package.json');
 const app = express();
 
 app.use(cors());
@@ -88,7 +89,12 @@ app.post('/api/notion/pages', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+  res.json({
+    status: 'ok',
+    message: 'Server is running',
+    version: version,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // SPA fallback - serve index.html for all non-API routes in production
@@ -100,5 +106,7 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 NotionMindmap Server v${version} running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🕐 Started at: ${new Date().toISOString()}`);
 });

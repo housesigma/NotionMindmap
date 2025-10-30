@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
@@ -159,6 +159,25 @@ function AppContent() {
 }
 
 function App() {
+  useEffect(() => {
+    // Fetch and log version information on app startup
+    const logVersionInfo = async () => {
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        console.log(`🚀 NotionMindmap Frontend v${data.version} loaded`);
+        console.log(`📊 Server status: ${data.status}`);
+        console.log(`🕐 Server timestamp: ${data.timestamp}`);
+        console.log(`🔧 Built with React ${React.version}`);
+      } catch (error) {
+        console.log('🚀 NotionMindmap Frontend loaded (version check failed)');
+        console.log('⚠️ Could not connect to backend server');
+      }
+    };
+
+    logVersionInfo();
+  }, []);
+
   return (
     <Router>
       <AppContent />
