@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Popover } from '@mui/material';
+import { Box, Typography, Paper, Collapse, IconButton } from '@mui/material';
+import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useNotionStore } from '../store/notionStore';
 
 const Matrix: React.FC = () => {
   const { problemTree, isLoading, isConnected } = useNotionStore();
-  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
+  const [unmappablePanelExpanded, setUnmappablePanelExpanded] = useState(true);
 
   // Process nodes for matrix visualization
   const { matrixNodes, unmappableNodes } = React.useMemo(() => {
@@ -85,7 +86,7 @@ const Matrix: React.FC = () => {
         <Box
           sx={{
             position: 'absolute',
-            top: 60,
+            top: 80,
             left: 60,
             right: 20,
             bottom: 60,
@@ -344,7 +345,7 @@ const Matrix: React.FC = () => {
           sx={{
             position: 'absolute',
             left: 0,
-            top: 60,
+            top: 80,
             bottom: 60,
             width: 60,
             display: 'flex',
@@ -490,97 +491,117 @@ const Matrix: React.FC = () => {
               Matrix Items: {matrixNodes.length}
             </Typography>
             {unmappableNodes.length > 0 && (
-              <Typography
-                variant="caption"
-                color="warning.800"
+              <Box
                 sx={{
-                  fontWeight: 600,
-                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: unmappablePanelExpanded ? 'default' : 'pointer',
+                  opacity: unmappablePanelExpanded ? 0.7 : 1,
                   '&:hover': {
-                    bgcolor: 'warning.100',
-                    borderRadius: 1,
-                    px: 0.5,
-                    py: 0.25
+                    opacity: unmappablePanelExpanded ? 0.7 : 0.8
                   }
                 }}
-                onClick={(event) => setPopoverAnchor(event.currentTarget)}
+                onClick={() => !unmappablePanelExpanded && setUnmappablePanelExpanded(true)}
+                title={unmappablePanelExpanded ? 'Unmappable panel is open' : 'Click to view unmappable items'}
               >
-                • Unmappable: {unmappableNodes.length}
-              </Typography>
+                <Typography variant="caption" color="warning.800" sx={{ fontWeight: 600 }}>
+                  • Unmappable: {unmappableNodes.length}
+                </Typography>
+              </Box>
             )}
           </Paper>
         </Box>
 
-        {/* Unmappable Nodes Popover */}
-        <Popover
-          open={Boolean(popoverAnchor)}
-          anchorEl={popoverAnchor}
-          onClose={() => setPopoverAnchor(null)}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          sx={{
-            '& .MuiPopover-paper': {
-              maxWidth: 400,
-              mt: 1
-            }
-          }}
-        >
-          <Paper
-            elevation={3}
+        {/* Unmappable Entities Panel */}
+        {unmappableNodes.length > 0 && unmappablePanelExpanded && (
+          <Box
             sx={{
-              px: 2,
-              py: 1.5,
-              bgcolor: 'warning.50',
-              border: '1px solid',
-              borderColor: 'warning.200'
+              position: 'absolute',
+              top: 75,
+              right: 16,
+              maxWidth: 400
             }}
           >
-            <Typography variant="subtitle2" color="warning.800" sx={{ mb: 1, fontWeight: 600 }}>
-              Missing Impact or Effort values
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              {unmappableNodes.length} items cannot be placed on the matrix:
-            </Typography>
-            <Box
+            <Paper
+              elevation={2}
               sx={{
-                maxHeight: 120,
-                overflowY: 'auto',
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 0.5
+                bgcolor: 'warning.50',
+                border: '1px solid',
+                borderColor: 'warning.300',
+                borderRadius: '8px',
+                overflow: 'hidden'
               }}
             >
-              {unmappableNodes.map((node) => {
-                const nodeId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
-                return (
-                  <Box
-                    key={node.id}
-                    sx={{
-                      px: 1,
-                      py: 0.25,
-                      bgcolor: 'grey.100',
-                      border: '1px solid',
-                      borderColor: 'grey.300',
-                      borderRadius: 1,
-                      fontSize: '0.7rem'
-                    }}
-                    title={`${node.title} - Impact: ${node.impact ?? 'N/A'}, Effort: ${node.effort ?? 'N/A'}`}
-                  >
-                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
-                      {nodeId}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Paper>
-        </Popover>
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setUnmappablePanelExpanded(false)}
+              >
+                <Box>
+                  <Typography variant="caption" color="warning.800" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                    Missing Impact or Effort values
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    {unmappableNodes.length} items cannot be placed on the matrix
+                  </Typography>
+                </Box>
+                <IconButton size="small" sx={{ color: 'warning.800', p: 0.5 }}>
+                  <ExpandLess fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Box
+                sx={{
+                  px: 1.5,
+                  pb: 1,
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 0.5
+                }}
+              >
+                {unmappableNodes.map((node) => {
+                  const nodeId = node.uniqueId || node.id.split('-').pop() || node.id.slice(-8);
+                  return (
+                    <Box
+                      key={node.id}
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: 'grey.100',
+                        border: '1px solid',
+                        borderColor: 'grey.300',
+                        borderRadius: 1,
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: 'grey.200'
+                        }
+                      }}
+                      title={`${node.title} - Impact: ${node.impact ?? 'N/A'}, Effort: ${node.effort ?? 'N/A'}`}
+                      onClick={() => {
+                        if (node.notionUrl) {
+                          window.open(node.notionUrl, '_blank');
+                        }
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+                        {nodeId}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Paper>
+          </Box>
+        )}
       </Paper>
     </Box>
   );
