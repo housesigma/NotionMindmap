@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import NotionConnection from './components/NotionConnection';
 import RootSelector from './components/RootSelector';
-import NodeSelectionControls from './components/NodeSelectionControls';
 import MindMapPage from './pages/MindMapPage';
 import RoadmapNewPage from './pages/RoadmapNewPage';
 import Matrix_new from './components/Matrix_new';
@@ -89,9 +88,6 @@ function AppContent() {
             <RootSelector />
           </div>
 
-          <div className="mt-4">
-            <NodeSelectionControls />
-          </div>
 
           {isConnected && (
             <div className="mt-4">
