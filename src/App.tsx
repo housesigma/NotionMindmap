@@ -165,7 +165,8 @@ function App() {
       try {
         // Use BASE_URL to automatically adapt to deployment environment
         const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
-        const response = await fetch(`${apiBaseUrl}/api/health`);
+        const apiPath = apiBaseUrl ? `${apiBaseUrl}/api/health` : '/api/health';
+        const response = await fetch(apiPath);
         const data = await response.json();
         console.log(`🚀 NotionMindmap Frontend v${data.version} loaded - Cache bust v0.1.0`);
         console.log(`📊 Server status: ${data.status}`);
@@ -181,7 +182,7 @@ function App() {
   }, []);
 
   return (
-    <Router basename="/DongLiu/notion-mindmap-v2">
+    <Router basename={import.meta.env.PROD ? "/DongLiu/notion-mindmap-v2" : ""}>
       <AppContent />
     </Router>
   );

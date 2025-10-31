@@ -34,9 +34,10 @@ class NotionDirectAPI {
       while (hasMore) {
         // Use BASE_URL to automatically adapt to deployment environment
         const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+        const apiPath = apiBaseUrl ? `${apiBaseUrl}/api/notion/query` : '/api/notion/query';
 
         const response = await fetch(
-          `${apiBaseUrl}/api/notion/query`,
+          apiPath,
           {
             method: 'POST',
             headers: {
@@ -79,9 +80,10 @@ class NotionDirectAPI {
 
     try {
       const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const apiPath = apiBaseUrl ? `${apiBaseUrl}/api/notion/pages` : '/api/notion/pages';
 
       const response = await fetch(
-        `${apiBaseUrl}/api/notion/pages`,
+        apiPath,
         {
           method: 'POST',
           headers: {
