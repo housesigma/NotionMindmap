@@ -36,7 +36,7 @@ class NotionDirectAPI {
         const apiBaseUrl = '';
 
         const response = await fetch(
-          `${apiBaseUrl}./api/notion/query`,
+          `${apiBaseUrl}/api/notion/query`,
           {
             method: 'POST',
             headers: {
@@ -81,7 +81,7 @@ class NotionDirectAPI {
       const apiBaseUrl = '';
 
       const response = await fetch(
-        `${apiBaseUrl}./api/notion/pages`,
+        `${apiBaseUrl}/api/notion/pages`,
         {
           method: 'POST',
           headers: {

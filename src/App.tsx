@@ -164,9 +164,9 @@ function App() {
     const logVersionInfo = async () => {
       try {
         // Use relative path to work with any base path deployment
-        const response = await fetch('./api/health');
+        const response = await fetch('/api/health');
         const data = await response.json();
-        console.log(`🚀 NotionMindmap Frontend v${data.version} loaded`);
+        console.log(`🚀 NotionMindmap Frontend v${data.version} loaded - Cache bust v0.1.0`);
         console.log(`📊 Server status: ${data.status}`);
         console.log(`🕐 Server timestamp: ${data.timestamp}`);
         console.log(`🔧 Built with React ${React.version}`);
@@ -180,7 +180,7 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <Router basename="/DongLiu/notion-mindmap-v2">
       <AppContent />
     </Router>
   );

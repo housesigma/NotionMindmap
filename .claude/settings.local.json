@@ -18,7 +18,9 @@
       "Bash(git add:*)",
       "Bash(git checkout:*)",
       "Bash(chmod:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(docker build:*)",
+      "Bash(docker save:*)"
     ],
     "deny": [],
     "ask": []

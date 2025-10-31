@@ -11,9 +11,48 @@ const saveToCache = (data: {
   timestamp: number;
 }, database: 'problems' | 'objectives') => {
   try {
-    localStorage.setItem(getCacheKey(database), JSON.stringify(data));
+    // Optimize data before storing - keep only essential fields
+    const optimizedPages = data.rawPages.map(page => ({
+      id: page.id,
+      created_time: page.created_time,
+      last_edited_time: page.last_edited_time,
+      url: page.url,
+      properties: page.properties
+    }));
+
+    const optimizedData = {
+      rawPages: optimizedPages,
+      currentRootId: data.currentRootId,
+      timestamp: data.timestamp
+    };
+
+    const jsonString = JSON.stringify(optimizedData);
+    const sizeInMB = new Blob([jsonString]).size / (1024 * 1024);
+
+    // Skip caching if data is too large (> 4MB to be safe)
+    if (sizeInMB > 4) {
+      console.warn(`Data too large to cache (${sizeInMB.toFixed(2)}MB). Skipping cache.`);
+      return;
+    }
+
+    localStorage.setItem(getCacheKey(database), jsonString);
+    console.log(`Cached ${optimizedPages.length} pages (${sizeInMB.toFixed(2)}MB) for ${database} database`);
   } catch (error) {
     console.warn('Failed to save data to cache:', error);
+    // If quota exceeded, try to clear old cache and retry once
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      try {
+        // Clear old cache data
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('notion-mindmap-data-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        console.log('Cleared old cache due to quota limit');
+      } catch (clearError) {
+        console.warn('Failed to clear cache:', clearError);
+      }
+    }
   }
 };
 
@@ -199,6 +238,15 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
       const tree = notionAPI.buildTree(nodes, cached.currentRootId || undefined);
       const availableRootNodes = notionAPI.getNodesFromFirstThreeLevels(nodes);
 
+      // Debug logging for canvas rendering issues
+      console.log('🔍 Debug: Processing cached data:', {
+        rawPagesCount: cached.rawPages.length,
+        nodesCount: nodes.size,
+        treeRoot: tree.root ? tree.root.id : 'null',
+        treeNodes: tree.nodes.size,
+        availableRoots: availableRootNodes.length
+      });
+
       set({
         rawPages: cached.rawPages,
         problemTree: tree,
@@ -209,9 +257,10 @@ export const useNotionStore = create<NotionStore>((set, get) => ({
         error: null,
       });
 
-      console.log(`Loaded ${cached.rawPages.length} cached pages, ${nodes.size} nodes`);
+      console.log(`✅ Loaded ${cached.rawPages.length} cached pages, ${nodes.size} nodes`);
+      console.log('🎯 ProblemTree set:', tree.root ? `Root: ${tree.root.title}` : 'No root found');
     } catch (error) {
-      console.error('Failed to process cached data:', error);
+      console.error('❌ Failed to process cached data:', error);
       set({
         error: 'Failed to load cached data. Please refresh to fetch from Notion.',
         rawPages: [],

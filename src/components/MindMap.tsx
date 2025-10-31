@@ -38,7 +38,12 @@ const MindMapInner: React.FC<MindMapProps> = ({
   const { fitView } = useReactFlow();
 
   useEffect(() => {
+    console.log('🔍 MindMap: Effect triggered with problemTree:', problemTree ? 'exists' : 'null');
+
     if (problemTree) {
+      console.log('🔍 MindMap: Processing tree with root:', problemTree.root ? problemTree.root.title : 'null');
+      console.log('🔍 MindMap: Tree nodes count:', problemTree.nodes.size);
+
       const layoutConfig = {
         layout: 'horizontal' as const,
         nodeSpacing: { x: 300, y: 120 },
@@ -51,6 +56,8 @@ const MindMapInner: React.FC<MindMapProps> = ({
         collapsedNodes
       );
       const { nodes: layoutNodes, edges: layoutEdges } = layoutEngine.generateLayout(problemTree);
+
+      console.log('🔍 MindMap: Layout generated nodes:', layoutNodes.length, 'edges:', layoutEdges.length);
 
       // Add the toggle handler to each node's data
       const nodesWithHandlers = layoutNodes.map(node => ({
@@ -74,10 +81,14 @@ const MindMapInner: React.FC<MindMapProps> = ({
       setNodes(nodesWithHandlers);
       setEdges(layoutEdges);
 
+      console.log('✅ MindMap: Set', nodesWithHandlers.length, 'nodes and', layoutEdges.length, 'edges');
+
       // Center the view after layout update
       setTimeout(() => {
         fitView({ padding: 0.2, duration: 800 });
       }, 100);
+    } else {
+      console.log('⚠️ MindMap: No problemTree provided');
     }
   }, [problemTree, config, collapsedNodes, setNodes, setEdges, fitView]);
 
