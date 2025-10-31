@@ -163,8 +163,9 @@ function App() {
     // Fetch and log version information on app startup
     const logVersionInfo = async () => {
       try {
-        // Use relative path to work with any base path deployment
-        const response = await fetch('/api/health');
+        // Use BASE_URL to automatically adapt to deployment environment
+        const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+        const response = await fetch(`${apiBaseUrl}/api/health`);
         const data = await response.json();
         console.log(`🚀 NotionMindmap Frontend v${data.version} loaded - Cache bust v0.1.0`);
         console.log(`📊 Server status: ${data.status}`);

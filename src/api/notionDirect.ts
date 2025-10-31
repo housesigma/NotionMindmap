@@ -32,8 +32,8 @@ class NotionDirectAPI {
 
     try {
       while (hasMore) {
-        // Use relative URLs to work with Vite proxy in both dev and production
-        const apiBaseUrl = '';
+        // Use BASE_URL to automatically adapt to deployment environment
+        const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
 
         const response = await fetch(
           `${apiBaseUrl}/api/notion/query`,
@@ -78,7 +78,7 @@ class NotionDirectAPI {
     }
 
     try {
-      const apiBaseUrl = '';
+      const apiBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
 
       const response = await fetch(
         `${apiBaseUrl}/api/notion/pages`,
