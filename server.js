@@ -12,8 +12,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
 }
 
+// Create API router with all endpoints
+const apiRouter = express.Router();
+
 // Proxy endpoint for Notion API calls
-app.post('/api/notion/query', async (req, res) => {
+apiRouter.post('/notion/query', async (req, res) => {
   try {
     const { apiKey, databaseId, startCursor } = req.body;
 
@@ -48,7 +51,7 @@ app.post('/api/notion/query', async (req, res) => {
 });
 
 // Endpoint to fetch specific pages by their IDs
-app.post('/api/notion/pages', async (req, res) => {
+apiRouter.post('/notion/pages', async (req, res) => {
   try {
     const { apiKey, pageIds } = req.body;
 
@@ -88,7 +91,7 @@ app.post('/api/notion/pages', async (req, res) => {
   }
 });
 
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Server is running',
@@ -97,9 +100,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Mount API router on both original and prefixed paths
+app.use('/api', apiRouter);
+app.use('/DongLiu/notion-mindmap-v2/api', apiRouter);
+
 // SPA fallback - serve index.html for all non-API routes in production
 if (process.env.NODE_ENV === 'production') {
-  app.get(/^\/(?!api\/).*/, (req, res) => {
+  app.get(/^\/(?!api\/|DongLiu\/notion-mindmap-v2\/api\/).*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 }
